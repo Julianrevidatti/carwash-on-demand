@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Suscripción</title>
+    <style>
+        body { font-family: system-ui, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .card { border: 1px solid #ccc; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        button { background: #009EE3; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; margin-top: 10px; }
+        button:hover { background: #008ED6; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; font-size: 12px; margin-top: 20px; }
+        .error { color: red; font-weight: bold; }
+        .success { color: green; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Prueba Diagnóstica de Suscripción</h2>
+        <p>Esta página prueba la conexión directa con el sistema de pagos, eludiendo la aplicación principal.</p>
+        
+        <div style="margin-bottom: 10px;">
+            <label>Email de Prueba:</label>
+            <input type="email" id="email" value="test_user@gestionpro.com" style="width: 100%; padding: 8px; margin-top: 5px;">
+        </div>
+
+        <button id="btn" onclick="testSubscription()">Generar Link de Pago</button>
+        
+        <div id="status" style="margin-top: 20px;"></div>
+        <pre id="log">Esperando...</pre>
+    </div>
+
+    <script>
+        // Configuración obtenida del entorno (Harcodeada para el test)
+        const SUPABASE_URL = "https://qeltuiqarfhymbhkdyan.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlbHR1aXFhcmZoeW1iaGtkeWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzOTYwNDIsImV4cCI6MjA3OTk3MjA0Mn0.WkLkdaA-vIXj-JH3D3SS-UBYDt0iCo4_wzetsqyR3IU";
+
+        async function testSubscription() {
+            const email = document.getElementById('email').value;
+            const logEl = document.getElementById('log');
+            const statusEl = document.getElementById('status');
+            const btn = document.getElementById('btn');
+            
+            btn.disabled = true;
+            btn.innerText = "Procesando...";
+            logEl.innerText = "Iniciando solicitud...";
+            statusEl.innerHTML = "";
+
+            try {
+                const tenantId = "test-tenant-" + Date.now();
+                const payload = {
+                    reason: "Suscripción TEST - Diagnóstico",
+                    external_reference: `${tenantId}|PRO`,
+                    payer_email: email,
+                    amount: 13999,
+                    tenant_id: tenantId
+                };
+
+                logEl.innerText += "\n\nEnviando Payload:\n" + JSON.stringify(payload, null, 2);
+
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/create-subscription`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    statusEl.innerHTML = '<span class="success">✅ ¡ÉXITO! Conexión Establecida</span>';
+                    logEl.innerText += "\n\nRespuesta Exitosa:\n" + JSON.stringify(data, null, 2);
+                    
+                    if (data.init_point) {
+                        statusEl.innerHTML += `<br><br><a href="${data.init_point}" target="_blank" style="background:green; color:white; padding:10px; text-decoration:none; display:block; text-align:center; border-radius:5px;">ABRIR MERCADO PAGO</a>`;
+                    }
+                } else {
+                    statusEl.innerHTML = '<span class="error">❌ ERROR DEL SERVIDOR</span>';
+                    logEl.innerText += "\n\nError:\n" + JSON.stringify(data, null, 2);
+                }
+
+            } catch (error) {
+                statusEl.innerHTML = '<span class="error">❌ ERROR DE RED O NAVEGADOR</span>';
+                logEl.innerText += "\n\nExcepción:\n" + error.toString();
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Generar Link de Pago";
+            }
+        }
+    </script>
+</body>
+</html>
