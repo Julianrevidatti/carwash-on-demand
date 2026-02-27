@@ -138,8 +138,30 @@ export const DataReports: React.FC<DataReportsProps> = ({
 }) => {
    const [activeTab, setActiveTab] = useState<Tab>('sales');
 
+   // LAZY LOAD HEAVY HISTORY
+   const hasFetchedFullHistory = React.useRef(false);
+
+   React.useEffect(() => {
+      if (!hasFetchedFullHistory.current && (activeTab === 'sessions' || activeTab === 'monthly')) {
+         import('../src/store/useStore').then(({ useStore }) => {
+            useStore.getState().fetchSales();
+            hasFetchedFullHistory.current = true;
+         });
+      }
+   }, [activeTab]);
+
    // Sales Filter State
    const [dateFilter, setDateFilter] = useState<DateFilter>('today');
+
+   React.useEffect(() => {
+      if (!hasFetchedFullHistory.current && (dateFilter === 'month' || dateFilter === 'all')) {
+         import('../src/store/useStore').then(({ useStore }) => {
+            useStore.getState().fetchSales();
+            hasFetchedFullHistory.current = true;
+         });
+      }
+   }, [dateFilter]);
+
    const [paymentFilter, setPaymentFilter] = useState<string>('all');
    const [supplierFilter, setSupplierFilter] = useState<string>('all');
    const [searchTerm, setSearchTerm] = useState('');
@@ -302,53 +324,13 @@ export const DataReports: React.FC<DataReportsProps> = ({
             const supplierMap = new Map<string, { gross: number, cost: number }>();
 
             sessionSales.forEach(sale => {
+               // The sum of list prices of all items in the ticket
                const saleGross = (sale.items || []).reduce((sum, i) => sum + (i.price * i.quantity), 0);
                const saleNet = sale.total - (sale.surcharge || 0);
-
-               // Helper to check promo eligibility
-               const isItemEligible = (itemId: string) => promotions?.some(p => p.triggerProductIds.includes(itemId)) || false;
-
-               // Create a list with eligibility flag
-               const itemsWithDetails = (sale.items || []).map(item => ({
-                  ...item,
-                  isEligible: isItemEligible(item.id)
-               }));
-
-               const eligibleGross = itemsWithDetails
-                  .filter(i => i.isEligible)
-                  .reduce((sum, i) => sum + (i.price * i.quantity), 0);
-
                const totalDiscount = saleGross - saleNet;
 
-               // --- LOGIC CORRECTION ---
-               // We must ensure that Sum(ItemNet) === saleNet.
-               // 1. If we have eligible items and a discount, we try to attribute the discount to them first.
-               // 2. If the discount is "Global" (no specific promo items) or "Manual" (supercedes promo), we spread it.
-
-               let eligibleRatio = 1;
-               let nonEligibleRatio = 1;
-
-               if (totalDiscount > 0 && eligibleGross > 0) {
-                  // Case A: Discount exists and we have promo items.
-                  // We try to absorb the discount FULLY into the eligible items.
-                  // USER REQUEST: STRICTLY limit discount to promo items. 
-                  // DO NOT spread to others even if discount is huge.
-
-                  // Eligible Items Output = EligibleGross - TotalDiscount
-                  // Note: This can potentially go negative if discount > eligibleGross (Manual override scenario)
-                  // But it preserves the integrity of other suppliers.
-                  const eligibleNet = eligibleGross - totalDiscount;
-                  eligibleRatio = eligibleNet / eligibleGross;
-                  nonEligibleRatio = 1; // Non-eligible items retain full list price
-               } else {
-                  // Case B: Global Discount (No specific promo items found).
-                  // Spreads evenly as we cannot distinguish.
-                  const globalRatio = saleGross > 0 ? saleNet / saleGross : 1;
-                  eligibleRatio = globalRatio;
-                  nonEligibleRatio = globalRatio;
-               }
-
-               itemsWithDetails.forEach(item => {
+               // Iterate items and add their 100% list price (gross) to their respective supplier
+               (sale.items || []).forEach(item => {
                   let supplierName = 'Desconocido';
 
                   // Prioritize historical snapshot data if available
@@ -369,29 +351,34 @@ export const DataReports: React.FC<DataReportsProps> = ({
                   }
 
                   const itemGross = item.price * item.quantity;
-                  const appliedRatio = item.isEligible ? eligibleRatio : nonEligibleRatio;
-
-                  // Calculate Net for this item
-                  const itemNet = itemGross * appliedRatio;
                   const itemCost = (item.cost || 0) * item.quantity;
 
                   const current = supplierMap.get(supplierName) || { gross: 0, cost: 0 };
                   supplierMap.set(supplierName, {
-                     gross: current.gross + itemNet, // We sum itemNet as the revenue per provider
-                     cost: current.cost + itemCost
+                     gross: current.gross + itemGross, // 100% face value
+                     cost: current.cost + itemCost     // 100% face cost
                   });
                });
 
+               // --- ADD DISCOUNTS TO BREAKDOWN (Negative Gross) ---
+               // Instead of proportionally deducting from each supplier, we register the discount
+               // as a separate row to keep the supplier totals mathematically verifiable with item prices.
+               if (totalDiscount > 0) {
+                  const discountName = 'Descuentos (Promos)';
+                  const currentDiscount = supplierMap.get(discountName) || { gross: 0, cost: 0 };
+                  supplierMap.set(discountName, {
+                     gross: currentDiscount.gross - totalDiscount, // Negative revenue
+                     cost: currentDiscount.cost // Discounts don't affect cost directly here
+                  });
+               }
+
                // --- ADD SURCHARGE TO BREAKDOWN ---
-               // If the sale has a surcharge, it is revenue that doesn't belong to a specific product supplier,
-               // but usually to the business (or financial cost offset). 
-               // We add it as a separate "provider" so the total matches the Box Total.
                if ((sale.surcharge || 0) > 0) {
                   const surchargeName = 'Recargos / Intereses';
                   const currentSurcharge = supplierMap.get(surchargeName) || { gross: 0, cost: 0 };
                   supplierMap.set(surchargeName, {
                      gross: currentSurcharge.gross + (sale.surcharge || 0),
-                     cost: currentSurcharge.cost // Surcharge has no COGS usually
+                     cost: currentSurcharge.cost // Surcharge has no COGS
                   });
                }
             });
@@ -404,6 +391,7 @@ export const DataReports: React.FC<DataReportsProps> = ({
                   profit: data.gross - data.cost
                }));
 
+            // Sort by absolute gross value descending (so large negative discounts don't drop to the bottom inappropriately, but usually we just want purely highest gross at top)
             return result.sort((a, b) => b.gross - a.gross);
          })()
       };
