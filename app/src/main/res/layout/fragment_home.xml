@@ -1,96 +1,73 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<?xml version="1.0" encoding="utf-8"?><LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context=".ui.home.HomeFragment">
 
-    <!-- Logo en la parte superior -->
-    <ImageView
-        android:id="@+id/logo_image"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginTop="16dp"
-        android:src="@drawable/logo_carwash"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <!-- Saludo al usuario -->
-    <TextView
-        android:id="@+id/greeting_text"
-        android:layout_width="0dp"
+    <!-- Contenido Superior (sin cambios) -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="24dp"
-        android:layout_marginEnd="24dp"
-        android:text="Buenas, Andrea! 👋"
-        android:textColor="@android:color/black"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/logo_image" />
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp">
 
-    <TextView
-        android:id="@+id/prompt_text"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
-        android:text="Listo para agendar tu lavado?"
-        android:textColor="@android:color/darker_gray"
-        android:textSize="16sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/greeting_text" />
+        <!-- Saludo inicial -->
+        <TextView
+            android:id="@+id/greeting_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="¡Hola, Andre!"
+            android:textColor="@android:color/black"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
-    <!-- Barra de búsqueda -->
-    <TextView
-        android:id="@+id/search_bar"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="24dp"
-        android:background="@drawable/search_bar_background"
-        android:drawableStart="@drawable/iconosearch"
-        android:drawablePadding="12dp"
-        android:gravity="center_vertical"
-        android:padding="12dp"
-        android:text="Buscar lavadero por zona"
-        android:textColor="@android:color/darker_gray"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/prompt_text" />
+        <!-- Texto de ayuda -->
+        <TextView
+            android:id="@+id/prompt_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="¿Qué lavado necesitás hoy?"
+            android:textSize="16sp" />
 
-    <!-- Título de la sección "Nuestros servicios" -->
-    <TextView
-        android:id="@+id/services_title"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="24dp"
-        android:layout_marginEnd="24dp"
-        android:text="Nuestros servicios"
-        android:textColor="@android:color/black"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/search_bar" />
+        <!-- Barra de búsqueda -->
+        <TextView
+            android:id="@+id/search_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:background="@drawable/edit_text_background"
+            android:drawableStart="@android:drawable/ic_menu_search"
+            android:drawablePadding="12dp"
+            android:gravity="center_vertical"
+            android:padding="16dp"
+            android:text="Buscar servicios" />
 
-    <!-- Contenedor principal con Scroll para las tarjetas -->
+        <!-- Título de la sección de servicios -->
+        <TextView
+            android:id="@+id/services_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Nuestros Servicios"
+            android:textColor="@android:color/black"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Contenedor con Scroll para las tarjetas -->
     <androidx.core.widget.NestedScrollView
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_weight="1"
         android:layout_marginTop="16dp"
-        app:layout_constraintBottom_toTopOf="@+id/nav_view"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/services_title">
+        android:clipToPadding="false"
+        android:paddingBottom="16dp">
 
         <GridLayout
             android:layout_width="match_parent"
@@ -121,7 +98,7 @@
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:orientation="vertical"
                         android:padding="12dp">
 
@@ -135,33 +112,29 @@
 
                         <TextView
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Lavado rápido y básico."
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
+                            android:text="Lavado rápido y básico. Interior y exterior."
                             android:textColor="@android:color/darker_gray"
-                            android:textSize="12sp" />
+                            android:textSize="12sp"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="12dp"/>
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
+                        <TextView
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:text="$22.00"
+                            android:textColor="@android:color/black"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
                             android:layout_marginTop="8dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="$22.00"
-                                android:textColor="@android:color/black"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-
-                            <Button
-                                android:layout_width="wrap_content"
-                                android:layout_height="40dp"
-                                android:text="Ver detalles"
-                                android:textSize="12sp" />
-                        </LinearLayout>
+                            android:text="Ver detalles"
+                            app:backgroundTint="@color/azulcarwash"
+                            android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -187,7 +160,7 @@
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:orientation="vertical"
                         android:padding="12dp">
 
@@ -201,33 +174,29 @@
 
                         <TextView
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
                             android:text="Lavado profundo por dentro y fuera."
                             android:textColor="@android:color/darker_gray"
-                            android:textSize="12sp" />
+                            android:textSize="12sp"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="12dp"/>
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
+                        <TextView
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:text="$34.00"
+                            android:textColor="@android:color/black"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
                             android:layout_marginTop="8dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="$34.00"
-                                android:textColor="@android:color/black"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-
-                            <Button
-                                android:layout_width="wrap_content"
-                                android:layout_height="40dp"
-                                android:text="Ver detalles"
-                                android:textSize="12sp" />
-                        </LinearLayout>
+                            android:text="Ver detalles"
+                            app:backgroundTint="@color/azulcarwash"
+                            android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -253,7 +222,7 @@
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:orientation="vertical"
                         android:padding="12dp">
 
@@ -267,33 +236,29 @@
 
                         <TextView
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
                             android:text="Lavado en menos de una hora."
                             android:textColor="@android:color/darker_gray"
-                            android:textSize="12sp" />
+                            android:textSize="12sp"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="12dp"/>
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
+                        <TextView
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:text="$28.00"
+                            android:textColor="@android:color/black"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
                             android:layout_marginTop="8dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="$22.00"
-                                android:textColor="@android:color/black"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-
-                            <Button
-                                android:layout_width="wrap_content"
-                                android:layout_height="40dp"
-                                android:text="Ver detalles"
-                                android:textSize="12sp" />
-                        </LinearLayout>
+                            android:text="Ver detalles"
+                            app:backgroundTint="@color/azulcarwash"
+                            android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -319,7 +284,7 @@
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:orientation="vertical"
                         android:padding="12dp">
 
@@ -333,37 +298,34 @@
 
                         <TextView
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
                             android:text="Lavado, encerado y pulido del vehículo."
                             android:textColor="@android:color/darker_gray"
-                            android:textSize="12sp" />
+                            android:textSize="12sp"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="12dp"/>
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
+                        <TextView
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:text="$45.00"
+                            android:textColor="@android:color/black"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
                             android:layout_marginTop="8dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="$34.00"
-                                android:textColor="@android:color/black"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-
-                            <Button
-                                android:layout_width="wrap_content"
-                                android:layout_height="40dp"
-                                android:text="Ver detalles"
-                                android:textSize="12sp" />
-                        </LinearLayout>
+                            android:text="Ver detalles"
+                            app:backgroundTint="@color/azulcarwash"
+                            android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
         </GridLayout>
     </androidx.core.widget.NestedScrollView>
-</androidx.constraintlayout.widget.ConstraintLayout>
+
+</LinearLayout>
