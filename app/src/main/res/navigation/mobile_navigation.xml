@@ -25,12 +25,12 @@
     <fragment
         android:id="@+id/navigation_reservas"
         android:name="com.example.carwash.ui.bookings.BookingFragment"
-        android:label="Agenda"
+        android:label="Reservas"
         tools:layout="@layout/fragment_bookings"/>
 
 <!--    <fragment-->
 <!--        android:id="@+id/navigation_profile"-->
 <!--        android:name="com.example.carwash.ui.profile.ProfileFragment"-->
-<!--        android:label="Perfil"-->
+<!--        android:label="Vehiculos"-->
 <!--        tools:layout="@layout/fragment_profile" />-->
 </navigation>

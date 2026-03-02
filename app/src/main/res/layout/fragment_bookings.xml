@@ -1,27 +1,49 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:material="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:padding="16dp"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- TITULO -->
-    <TextView
-        android:text="Mi agenda"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="4dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+    <!-- SECCIÓN DEL LOGO CENTRADO -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingTop="24dp"
+        android:paddingBottom="16dp">
 
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/logo_carwash"/>
+
+    </LinearLayout>
+
+    <!-- Título -->
     <TextView
-        android:text="Maneja tus reservas facilmente"
-        android:textSize="14sp"
-        android:textColor="#888"
-        android:layout_marginBottom="16dp"
+        android:id="@+id/registrarse"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="Mis reservas"
+        android:textColor="@android:color/black"
+        android:textSize="24sp"
+        android:textStyle="bold"/>
+
+    <!-- Subtítulo -->
+    <TextView
+        android:id="@+id/subtitulo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="24dp"
+        android:text="Maneja tus reservas de lavado"
+        android:textColor="@android:color/darker_gray"
+        android:textSize="16sp"/>
 
     <!-- SEGMENTED TABS -->
     <com.google.android.material.tabs.TabLayout
@@ -31,17 +53,18 @@
 
         material:tabIndicatorHeight="0dp"
         material:tabBackground="@drawable/tab_selector"
-        material:tabTextColor="#888"
+        app:backgroundTint="@color/azulcarwash"
         material:tabSelectedTextColor="@android:color/white">
 
         <com.google.android.material.tabs.TabItem
-            android:text="Programado"/>
+            android:text="Programado"
+            android:layout_width="match_parent"
+            android:layout_height="26dp"
+            android:layout_marginTop="8dp"
+            app:backgroundTint="@color/azulcarwash"
+            android:textSize="12sp"
+            />
 
-        <com.google.android.material.tabs.TabItem
-            android:text="Finalizado"/>
-
-        <com.google.android.material.tabs.TabItem
-            android:text="Cancelado"/>
     </com.google.android.material.tabs.TabLayout>
 
     <!-- LISTA -->

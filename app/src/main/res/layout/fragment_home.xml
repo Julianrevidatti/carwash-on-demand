@@ -126,6 +126,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="100dp"
                             android:background="@android:color/darker_gray"
+                            android:src="@drawable/lavadobase"
                             android:scaleType="centerCrop" />
 
                         <LinearLayout
@@ -188,6 +189,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="100dp"
                             android:background="@android:color/darker_gray"
+                            android:src="@drawable/lavadopremium"
                             android:scaleType="centerCrop" />
 
                         <LinearLayout
@@ -250,6 +252,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="100dp"
                             android:background="@android:color/darker_gray"
+                            android:src="@drawable/lavadoexpress"
                             android:scaleType="centerCrop" />
 
                         <LinearLayout
@@ -312,6 +315,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="100dp"
                             android:background="@android:color/darker_gray"
+                            android:src="@drawable/lavadodetailing"
                             android:scaleType="centerCrop" />
 
                         <LinearLayout
