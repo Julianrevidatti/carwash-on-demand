@@ -66,6 +66,9 @@
             android:padding="16dp"/>
 
         <!-- Campo de Contraseña con el nuevo estilo -->
+
+        <!-- Botón de Login -->
+
         <EditText
             android:id="@+id/etPasswordLogin"
             android:layout_width="match_parent"
@@ -73,9 +76,8 @@
             android:background="@drawable/edit_text_background"
             android:hint="Contraseña"
             android:inputType="textPassword"
-            android:padding="16dp"/>
+            android:padding="16dp" />
 
-        <!-- Botón de Login -->
         <Button
             android:id="@+id/btnLogin"
             android:layout_width="match_parent"

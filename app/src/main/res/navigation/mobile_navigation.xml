@@ -6,17 +6,27 @@
     app:startDestination="@+id/navigation_home">
 
     <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.carwash.ui.login.LoginFragment"
+        android:label="Login"
+        tools:layout="@layout/fragment_login">
+
+        <action
+            android:id="@+id/action_loginFragment_to_navigation_home"
+            app:destination="@id/navigation_home"/>
+    </fragment>
+
+    <fragment
         android:id="@+id/navigation_home"
         android:name="com.example.carwash.ui.home.HomeFragment"
         android:label="@string/title_home"
         tools:layout="@layout/fragment_home" />
 
-<!--    &lt;!&ndash; Aquí definirías los otros fragmentos como Agenda y Perfil &ndash;&gt;-->
-<!--    <fragment-->
-<!--        android:id="@+id/navigation_agenda"-->
-<!--        android:name="com.example.carwash.ui.agenda.AgendaFragment"-->
-<!--        android:label="Agenda"-->
-<!--        tools:layout="@layout/fragment_agenda" />-->
+    <fragment
+        android:id="@+id/navigation_reservas"
+        android:name="com.example.carwash.ui.bookings.BookingFragment"
+        android:label="Agenda"
+        tools:layout="@layout/fragment_bookings"/>
 
 <!--    <fragment-->
 <!--        android:id="@+id/navigation_profile"-->

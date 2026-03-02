@@ -5,9 +5,9 @@
         android:icon="@drawable/iconohome"
         android:title="Inicio" />
     <item
-        android:id="@+id/navigation_agenda"
+        android:id="@+id/navigation_reservas"
         android:icon="@drawable/iconoreservas"
-        android:title="Reservas" />
+        android:title="Agenda"/>
     <item
         android:id="@+id/navigation_profile"
         android:icon="@drawable/iconoperfil"
