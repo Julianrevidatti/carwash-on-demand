@@ -129,9 +129,9 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
         throw new Error(response.data.error);
       }
 
-      // Automatically refresh the tenant list
+      // Automatically refresh the tenant list (in the background)
       if (response.data?.success) {
-        await get().fetchAllTenants();
+        get().fetchAllTenants().catch(console.error);
       }
 
       return { success: true, tenantId: response.data?.tenantId };
