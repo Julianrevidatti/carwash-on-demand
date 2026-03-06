@@ -91,7 +91,8 @@ export const createSettingsSlice: StateCreator<SettingsSlice> = (set, get) => ({
                 active: p.active,
                 type: p.type || 'standard',
                 quantityRequired: p.quantity_required,
-                requirements: p.requirements
+                requirements: p.requirements,
+                imageUrl: p.image_url
             }));
             set({ promotions: mappedPromos });
         }
@@ -185,6 +186,7 @@ export const createSettingsSlice: StateCreator<SettingsSlice> = (set, get) => ({
             type: promo.type,
             quantity_required: promo.quantityRequired,
             requirements: promo.requirements, // Added requirements
+            image_url: promo.imageUrl,
             tenant_id: tenantId
         };
 
@@ -216,6 +218,7 @@ export const createSettingsSlice: StateCreator<SettingsSlice> = (set, get) => ({
                 type: p.type || 'standard',
                 quantity_required: p.quantityRequired,
                 requirements: p.requirements,
+                image_url: p.imageUrl,
                 tenant_id: tenantId
             })));
 
@@ -238,6 +241,7 @@ export const createSettingsSlice: StateCreator<SettingsSlice> = (set, get) => ({
             type: promo.type,
             quantity_required: promo.quantityRequired,
             requirements: promo.requirements,
+            image_url: promo.imageUrl,
             tenant_id: tenantId
         };
 

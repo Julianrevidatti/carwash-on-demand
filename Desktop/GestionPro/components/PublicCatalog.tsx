@@ -100,7 +100,8 @@ export const PublicCatalog = ({ tenantId }: { tenantId: string }) => {
                 active: p.active,
                 type: p.type,
                 quantityRequired: p.quantity_required,
-                requirements: p.requirements
+                requirements: p.requirements,
+                imageUrl: p.image_url
             }));
 
             // 4. Process Promotions into Product-like objects
@@ -131,8 +132,8 @@ export const PublicCatalog = ({ tenantId }: { tenantId: string }) => {
                     category: 'Ofertas',
                     isPromo: true,
                     promoType: promo.type,
-                    // Use a placeholder image or null
-                    image_url: undefined
+                    // Use promo image if available, else undefined
+                    image_url: promo.imageUrl || undefined
                 };
             });
 

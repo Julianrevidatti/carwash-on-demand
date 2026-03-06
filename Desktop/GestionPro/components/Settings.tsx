@@ -92,6 +92,12 @@ export const Settings: React.FC<SettingsProps> = ({
   const [showPermissions, setShowPermissions] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
+  // MP Email Modal State
+  const [showMpEmailModal, setShowMpEmailModal] = useState(false);
+  const [mpEmailInput, setMpEmailInput] = useState('');
+  const [pendingPlan, setPendingPlan] = useState<PricingPlan | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
   // --- Handlers ---
 
   const handleUpdateSurcharge = (id: string, newPercent: string) => {
@@ -199,22 +205,29 @@ export const Settings: React.FC<SettingsProps> = ({
     alert("Usuario actualizado exitosamente.");
   };
 
-  const handleCheckoutDirect = async (plan: PricingPlan) => {
+  const handleCheckoutDirect = (plan: PricingPlan) => {
+    setPendingPlan(plan);
+    setMpEmailInput(currentUser?.email || currentTenant?.contactName || '');
+    setShowMpEmailModal(true);
+  };
+
+  const handleConfirmMpEmail = async () => {
+    if (!pendingPlan) return;
+    if (!mpEmailInput || !mpEmailInput.includes('@')) {
+      toast.error("Ingresá un email válido.");
+      return;
+    }
+
+    setCheckoutLoading(true);
     try {
       toast.info("Generando link de suscripción...");
-      const reference = currentTenant?.id || `sub_${Date.now()}`;
-
-      const amount = plan === 'BASIC' ? 9999 : plan === 'PRO' ? 13999 : 29999;
-      const planName = plan === 'BASIC' ? 'Básico' : plan === 'PRO' ? 'PRO' : 'Ultimate';
-
-      // Use the store's current user email or tenant contact name (which is often the same)
-      const userEmail = currentUser?.email || currentTenant?.contactName || "cliente@gestionpro.com";
+      const amount = pendingPlan === 'BASIC' ? 9999 : pendingPlan === 'PRO' ? 13999 : 29999;
 
       const checkoutUrl = await createSubscriptionLink(
         currentTenant,
-        plan as 'BASIC' | 'PRO' | 'ULTIMATE',
+        pendingPlan as 'BASIC' | 'PRO' | 'ULTIMATE',
         amount,
-        userEmail
+        mpEmailInput.trim()
       );
 
       if (!checkoutUrl) {
@@ -223,9 +236,10 @@ export const Settings: React.FC<SettingsProps> = ({
 
       toast.success("Redirigiendo a Mercado Pago...");
       window.location.href = checkoutUrl;
-
     } catch (error: any) {
       toast.error(`Error: ${error.message || "No se pudo iniciar el pago"}`);
+    } finally {
+      setCheckoutLoading(false);
     }
   };
 
@@ -322,6 +336,74 @@ export const Settings: React.FC<SettingsProps> = ({
           Mi Negocio
         </button>
       </div>
+
+      {/* --- MP EMAIL MODAL --- */}
+      {showMpEmailModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-blue-100 animate-in zoom-in-95 duration-300">
+            <div className="bg-gradient-to-r from-[#009EE3] to-[#0077B6] p-5 text-white text-center">
+              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <CreditCard className="w-7 h-7" />
+              </div>
+              <h3 className="text-lg font-black">Confirmar Email de Pago</h3>
+              <p className="text-sm text-white/80 mt-1">
+                Plan {pendingPlan === 'BASIC' ? 'Básico' : pendingPlan === 'PRO' ? 'PRO' : 'Ultimate'}
+                {' · $'}
+                {pendingPlan === 'BASIC' ? '9.999' : pendingPlan === 'PRO' ? '13.999' : '29.999'}
+                /mes
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Email de tu cuenta de Mercado Pago
+                </label>
+                <input
+                  type="email"
+                  value={mpEmailInput}
+                  onChange={(e) => setMpEmailInput(e.target.value)}
+                  placeholder="tuemail@ejemplo.com"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#009EE3] focus:ring-2 focus:ring-blue-100 transition-all outline-none text-slate-800 font-medium"
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && handleConfirmMpEmail()}
+                />
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2">
+                <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-700 leading-relaxed">
+                  <strong>Importante:</strong> Ingresá el email con el que iniciás sesión en Mercado Pago. Si es diferente al del sistema, no hay problema.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => { setShowMpEmailModal(false); setPendingPlan(null); }}
+                  className="flex-1 py-3 rounded-xl font-bold text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                  disabled={checkoutLoading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmMpEmail}
+                  disabled={checkoutLoading || !mpEmailInput.includes('@')}
+                  className="flex-1 py-3 rounded-xl font-bold text-sm text-white bg-[#009EE3] hover:bg-[#008AD6] transition-colors shadow-lg shadow-blue-200 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {checkoutLoading ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <CreditCard className="w-4 h-4" />
+                      Ir a Pagar
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- CONTENT AREA --- */}
       <div className="mt-6">

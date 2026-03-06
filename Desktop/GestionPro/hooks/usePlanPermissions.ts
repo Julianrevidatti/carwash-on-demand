@@ -39,15 +39,9 @@ export const usePlanPermissions = () => {
     const isPaidPlan = planKey !== 'FREE';
     const gracePeriodDays = isPaidPlan ? 5 : 0;
 
-    // Calculate grace days elapsed and remaining
-    const gracePeriodStart = currentTenant?.gracePeriodStart;
-    // Grace Period Calculation
-    // We use Math.floor to not count the current partial day as "elapsed" fully, giving the user more time
-    const graceDaysElapsed = gracePeriodStart
-        ? Math.floor((new Date().getTime() - new Date(gracePeriodStart).getTime()) / (1000 * 60 * 60 * 24))
-        : 0;
-
-    const graceDaysRemaining = Math.max(0, gracePeriodDays - graceDaysElapsed);
+    // Calculate grace days elapsed and remaining based strictly on expiration date
+    const daysExpired = daysRemaining < 0 ? Math.abs(daysRemaining) : 0;
+    const graceDaysRemaining = Math.max(0, gracePeriodDays - daysExpired);
 
     // User is in grace period if:
     // 1. License expired (daysRemaining <= 0)

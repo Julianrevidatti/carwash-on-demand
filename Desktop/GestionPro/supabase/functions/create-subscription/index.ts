@@ -21,11 +21,11 @@ serve(async (req) => {
             throw new Error("Invalid JSON body");
         }
 
-        const { reason, external_reference, payer_email, amount } = body;
+        const { reason, external_reference, amount, payer_email } = body;
 
         // Validar campos obligatorios
-        if (!reason || !external_reference || !payer_email || !amount) {
-            throw new Error(`Faltan campos obligatorios: ${JSON.stringify({ reason: !!reason, external_reference: !!external_reference, payer_email: !!payer_email, amount: !!amount })}`);
+        if (!reason || !external_reference || !amount || !payer_email) {
+            throw new Error(`Faltan campos obligatorios: ${JSON.stringify({ reason: !!reason, external_reference: !!external_reference, amount: !!amount, payer_email: !!payer_email })}`);
         }
 
         const token = Deno.env.get('MP_ACCESS_TOKEN')?.trim();
@@ -34,26 +34,25 @@ serve(async (req) => {
             throw new Error("Token no configurado en Deno.env");
         }
 
-        // FALLBACK EMAIL: Si tiene '+', usamos uno por defecto para no romper MP
-        let finalEmail = payer_email;
-        if (payer_email && payer_email.includes('+')) {
-            console.log(`[DEPLOY] Email con '+' detectado (${payer_email}). Usando default.`);
-            finalEmail = "suscripciones@gestionnow.site";
-        }
-
         // Extraer plan del external_reference (format: tenantId|PLAN)
         const parts = external_reference.split('|');
         const planCode = parts[1] || 'PRO';
 
-        // NOTA: Volvemos a usar Suscripción Ad-Hoc (/preapproval sin plan_id)
-        // porque usar preapproval_plan_id requiere card_token_id (S2S) y no genera link de pago.
+        // Limpiar el email: quitar alias con '+' (ej: user+2@gmail.com → user@gmail.com)
+        // porque Mercado Pago rechaza emails con '+'
+        let cleanEmail = payer_email;
+        if (cleanEmail.includes('+')) {
+            const [localPart, domain] = cleanEmail.split('@');
+            const cleanLocal = localPart.split('+')[0];
+            cleanEmail = cleanLocal + '@' + domain;
+        }
 
-        console.log(`[DEPLOY] Creating Ad-Hoc Subscription for Plan: ${planCode}`);
+        console.log(`[DEPLOY] Creating Ad-Hoc Subscription for Plan: ${planCode}, original email: ${payer_email}, clean email: ${cleanEmail}`);
 
         const mpBody = {
-            reason: reason.substring(0, 50), // Asegurar longitud válida
-            external_reference: external_reference, // Clave para vincular el pago
-            payer_email: finalEmail, // Usar email validado
+            reason: reason.substring(0, 50),
+            external_reference: external_reference,
+            payer_email: cleanEmail,
             auto_recurring: {
                 frequency: 1,
                 frequency_type: "months",

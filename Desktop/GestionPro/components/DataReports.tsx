@@ -22,7 +22,7 @@ interface DataReportsProps {
 type Tab = 'sales' | 'sessions' | 'monthly';
 type DateFilter = 'today' | 'yesterday' | 'week' | 'month' | 'all';
 
-const TicketModal = ({ sale, onClose }: { sale: Sale; onClose: () => void }) => {
+const TicketModal = ({ sale, onClose, promotions = [] }: { sale: Sale; onClose: () => void; promotions?: Promotion[] }) => {
    // Calculate the "real" subtotal from the items list to ensure consistency
    // Fallback: If no items (legacy data), use total as subtotal so it looks consistent (Subtotal 3000 -> Total 3000)
    const calculatedSubtotal = sale.items.length > 0
@@ -86,12 +86,35 @@ const TicketModal = ({ sale, onClose }: { sale: Sale; onClose: () => void }) => 
                      <span className="text-gray-500">Subtotal</span>
                      <span className="font-medium">${calculatedSubtotal.toLocaleString()}</span>
                   </div>
-                  {finalDiscount > 0 && (
-                     <div className="flex justify-between text-sm text-green-600">
-                        <span>Descuento / Promo</span>
-                        <span>-${finalDiscount.toLocaleString()}</span>
-                     </div>
-                  )}
+                  {finalDiscount > 0 && (() => {
+                     // Identify which promos matched this sale's items
+                     const saleItemIds = sale.items.map(i => i.id);
+                     const matchedPromos = promotions.filter(p =>
+                        p.triggerProductIds.every(pid => saleItemIds.includes(pid))
+                     );
+                     return (
+                        <div className="space-y-1">
+                           {matchedPromos.length > 0 ? (
+                              matchedPromos.map(p => (
+                                 <div key={p.id} className="flex justify-between text-sm text-green-600">
+                                    <span className="flex items-center gap-1">
+                                       <span className="bg-green-100 text-green-700 text-[9px] font-bold px-1.5 py-0.5 rounded">PROMO</span>
+                                       {p.name}
+                                    </span>
+                                 </div>
+                              ))
+                           ) : (
+                              <div className="flex justify-between text-sm text-green-600">
+                                 <span>Descuento</span>
+                              </div>
+                           )}
+                           <div className="flex justify-between text-sm text-green-600 font-bold">
+                              <span>Total Descuento</span>
+                              <span>-${finalDiscount.toLocaleString()}</span>
+                           </div>
+                        </div>
+                     );
+                  })()}
                   {(sale.surcharge || 0) > 0 && (
                      <div className="flex justify-between text-sm text-blue-600">
                         <span>Recargo</span>
@@ -324,22 +347,16 @@ export const DataReports: React.FC<DataReportsProps> = ({
             const supplierMap = new Map<string, { gross: number, cost: number }>();
 
             sessionSales.forEach(sale => {
-               // The sum of list prices of all items in the ticket
-               const saleGross = (sale.items || []).reduce((sum, i) => sum + (i.price * i.quantity), 0);
-               const saleNet = sale.total - (sale.surcharge || 0);
-               const totalDiscount = saleGross - saleNet;
+               const saleItems = sale.items || [];
+               const saleItemIds = saleItems.map(i => i.id);
 
-               // Iterate items and add their 100% list price (gross) to their respective supplier
-               (sale.items || []).forEach(item => {
+               // STEP 1: Resolve supplier for each item and add gross (list price)
+               const itemsResolved = saleItems.map(item => {
                   let supplierName = 'Desconocido';
-
-                  // Prioritize historical snapshot data if available
                   if (item.supplierId) {
                      const supplier = suppliers.find(s => s.id === item.supplierId);
                      if (supplier) supplierName = supplier.name;
                   }
-
-                  // Fallback to searching current product lists
                   if (supplierName === 'Desconocido') {
                      const product = products.find(p => p.id === item.id);
                      const bulk = bulkProducts.find(p => p.id === item.id);
@@ -349,36 +366,190 @@ export const DataReports: React.FC<DataReportsProps> = ({
                         if (supplier) supplierName = supplier.name;
                      }
                   }
+                  return { ...item, supplierName };
+               });
 
+               // Add gross (list price) per supplier
+               itemsResolved.forEach(item => {
                   const itemGross = item.price * item.quantity;
                   const itemCost = (item.cost || 0) * item.quantity;
-
-                  const current = supplierMap.get(supplierName) || { gross: 0, cost: 0 };
-                  supplierMap.set(supplierName, {
-                     gross: current.gross + itemGross, // 100% face value
-                     cost: current.cost + itemCost     // 100% face cost
+                  const current = supplierMap.get(item.supplierName) || { gross: 0, cost: 0 };
+                  supplierMap.set(item.supplierName, {
+                     gross: current.gross + itemGross,
+                     cost: current.cost + itemCost
                   });
                });
 
-               // --- ADD DISCOUNTS TO BREAKDOWN (Negative Gross) ---
-               // Instead of proportionally deducting from each supplier, we register the discount
-               // as a separate row to keep the supplier totals mathematically verifiable with item prices.
-               if (totalDiscount > 0) {
-                  const discountName = 'Descuentos (Promos)';
-                  const currentDiscount = supplierMap.get(discountName) || { gross: 0, cost: 0 };
-                  supplierMap.set(discountName, {
-                     gross: currentDiscount.gross - totalDiscount, // Negative revenue
-                     cost: currentDiscount.cost // Discounts don't affect cost directly here
-                  });
+               // STEP 2: Detect exact promotions (like POS engine) and subtract their exact discount from the correct supplier
+               // Build a cart map from the ticket items (product_id -> quantity)
+               const cartMap: Record<string, number> = {};
+               itemsResolved.forEach(item => {
+                  const pid = (item as any).productId || (item as any).product_id || item.id;
+                  cartMap[pid] = (cartMap[pid] || 0) + item.quantity;
+               });
+
+               // Build a map of product_id -> supplierName for attribution
+               const pidToSupplier: Record<string, string> = {};
+               itemsResolved.forEach(item => {
+                  const pid = (item as any).productId || (item as any).product_id || item.id;
+                  pidToSupplier[pid] = item.supplierName;
+               });
+
+               // Run the POS promo engine in reverse to detect exact discounts
+               const supplierPromoDiscount = new Map<string, number>();
+
+               const sortedPromos = [...promotions].filter(p => p.active).sort((a, b) => (b.promoPrice || 0) - (a.promoPrice || 0));
+
+               for (const promo of sortedPromos) {
+                  let triggers = promo.triggerProductIds || (promo as any).trigger_product_ids || [];
+                  if (typeof triggers === 'string') { try { triggers = JSON.parse(triggers) } catch (e) { triggers = [] } }
+
+                  let reqs = promo.requirements || [];
+                  if (typeof reqs === 'string') { try { reqs = JSON.parse(reqs) } catch (e) { reqs = [] } }
+
+                  const promoPrice = promo.promoPrice || (promo as any).promo_price || 0;
+                  const promoType = promo.type || (promo as any).type || 'standard';
+                  const qtyReq = promo.quantityRequired || (promo as any).quantity_required || 0;
+
+                  if (promoType === 'flexible' && qtyReq > 0) {
+                     // FLEXIBLE (Mix & Match): any combination of triggerProductIds
+                     const matchingPids = (triggers as string[]).filter((pid: string) => (cartMap[pid] || 0) > 0);
+                     let totalAvailable = matchingPids.reduce((sum: number, pid: string) => sum + (cartMap[pid] || 0), 0);
+                     const combosPossible = Math.floor(totalAvailable / qtyReq);
+
+                     if (combosPossible > 0) {
+                        // Build units sorted by price desc (most expensive first)
+                        const availableUnits: { id: string, price: number }[] = [];
+                        matchingPids.forEach((pid: string) => {
+                           const product = products.find(p => p.id === pid) || bulkProducts.find((p: any) => p.id === pid);
+                           const qty = cartMap[pid] || 0;
+                           for (let i = 0; i < qty; i++) availableUnits.push({ id: pid, price: (product as any)?.price || 0 });
+                        });
+                        availableUnits.sort((a, b) => b.price - a.price);
+
+                        const unitsUsed = availableUnits.slice(0, combosPossible * qtyReq);
+                        const regularPriceSum = unitsUsed.reduce((sum, u) => sum + u.price, 0);
+
+                        // Deduct from cart map
+                        unitsUsed.forEach(u => { if (cartMap[u.id] > 0) cartMap[u.id]--; });
+
+                        const discount = regularPriceSum - (combosPossible * promoPrice);
+                        if (discount > 0) {
+                           // Attribute to the supplier of the first triggered product
+                           const supName = pidToSupplier[unitsUsed[0]?.id] || 'Desconocido';
+                           supplierPromoDiscount.set(supName, (supplierPromoDiscount.get(supName) || 0) + discount);
+                        }
+                     }
+
+                  } else if (promoType === 'weighted' && Array.isArray(reqs) && reqs.length > 0) {
+                     // WEIGHTED: check requirements with minWeight
+                     let possibleCombos = Infinity;
+                     for (const req of reqs as any[]) {
+                        const minWeight = Number(req.minWeight || 0);
+                        const pid = req.productId || req.product_id;
+                        const availableWeight = cartMap[pid] || 0;
+                        if (availableWeight < minWeight) { possibleCombos = 0; break; }
+                        const limit = Math.floor(availableWeight / minWeight);
+                        if (limit < possibleCombos) possibleCombos = limit;
+                     }
+                     if (possibleCombos === Infinity) possibleCombos = 0;
+
+                     if (possibleCombos > 0) {
+                        let regularPricePerCombo = 0;
+                        const reqArray = reqs as any[];
+                        reqArray.forEach((req: any) => {
+                           const minWeight = Number(req.minWeight || 0);
+                           const pid = req.productId || req.product_id;
+                           const product = products.find(p => p.id === pid) || bulkProducts.find((p: any) => p.id === pid);
+                           const pricePerKg = (product as any)?.price || (product as any)?.pricePerKg || 0;
+                           regularPricePerCombo += (minWeight * pricePerKg);
+                           cartMap[pid] -= (possibleCombos * minWeight);
+                        });
+
+                        const savingsPerCombo = regularPricePerCombo - promoPrice;
+                        if (savingsPerCombo > 0) {
+                           const firstPid = (reqArray[0] as any)?.productId || (reqArray[0] as any)?.product_id;
+                           const supName = pidToSupplier[firstPid] || 'Desconocido';
+                           supplierPromoDiscount.set(supName, (supplierPromoDiscount.get(supName) || 0) + (savingsPerCombo * possibleCombos));
+                        }
+                     }
+
+                  } else {
+                     // STANDARD (Strict): exact product ID matching
+                     const requirements: Record<string, number> = {};
+                     (triggers as string[]).forEach((pid: string) => {
+                        requirements[pid] = (requirements[pid] || 0) + 1;
+                     });
+
+                     let applyCount = 0;
+                     while (true) {
+                        const canApply = Object.entries(requirements).every(([pid, required]) => (cartMap[pid] || 0) >= required);
+                        if (!canApply) break;
+
+                        Object.entries(requirements).forEach(([pid, required]) => { cartMap[pid] -= required; });
+
+                        const regularSum = (triggers as string[]).reduce((sum: number, pid: string) => {
+                           const p = products.find(prod => prod.id === pid) || bulkProducts.find((prod: any) => prod.id === pid);
+                           return sum + ((p as any)?.price || 0);
+                        }, 0);
+
+                        const discount = regularSum - promoPrice;
+                        if (discount > 0) {
+                           const supName = pidToSupplier[(triggers as string[])[0]] || 'Desconocido';
+                           supplierPromoDiscount.set(supName, (supplierPromoDiscount.get(supName) || 0) + discount);
+                        }
+                        applyCount++;
+                     }
+                  }
                }
 
-               // --- ADD SURCHARGE TO BREAKDOWN ---
+               // Apply the exact promo discounts to the supplier map, capped to actual ticket discount
+               const ticketGross = itemsResolved.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+               const ticketNet = sale.total - (sale.surcharge || 0);
+               const actualTicketDiscount = Math.max(0, ticketGross - ticketNet);
+
+               // Sum all detected promo discounts
+               let totalDetectedDiscount = 0;
+               supplierPromoDiscount.forEach(d => totalDetectedDiscount += d);
+
+               if (actualTicketDiscount > 0) {
+                  if (totalDetectedDiscount > 0) {
+                     if (totalDetectedDiscount >= actualTicketDiscount) {
+                        // Cap: if engine detected more than actual, scale down proportionally
+                        const scaleFactor = actualTicketDiscount / totalDetectedDiscount;
+                        supplierPromoDiscount.forEach((discount, supName) => {
+                           const cappedDiscount = discount * scaleFactor;
+                           const current = supplierMap.get(supName) || { gross: 0, cost: 0 };
+                           supplierMap.set(supName, { gross: current.gross - cappedDiscount, cost: current.cost });
+                        });
+                     } else {
+                        // totalDetectedDiscount < actualTicketDiscount
+                        // Distribute the remainder ONLY among the suppliers who already had a promo detected (Option B)
+                        const remainder = actualTicketDiscount - totalDetectedDiscount;
+                        supplierPromoDiscount.forEach((discount, supName) => {
+                           const ratio = discount / totalDetectedDiscount;
+                           const shareOfRemainder = remainder * ratio;
+                           const totalDiscountToApply = discount + shareOfRemainder;
+                           const current = supplierMap.get(supName) || { gross: 0, cost: 0 };
+                           supplierMap.set(supName, { gross: current.gross - totalDiscountToApply, cost: current.cost });
+                        });
+                     }
+                  } else {
+                     // totalDetectedDiscount === 0 but actualTicketDiscount > 0 (Orphaned/Manual discount)
+                     // Option B: Attribute to a special category so the Z-report math adds up perfectly without penalizing innocents.
+                     const orphanName = 'Descuentos Huérfanos / Promos Borradas';
+                     const current = supplierMap.get(orphanName) || { gross: 0, cost: 0 };
+                     supplierMap.set(orphanName, { gross: current.gross - actualTicketDiscount, cost: current.cost });
+                  }
+               }
+
+               // ADD SURCHARGE TO BREAKDOWN
                if ((sale.surcharge || 0) > 0) {
                   const surchargeName = 'Recargos / Intereses';
                   const currentSurcharge = supplierMap.get(surchargeName) || { gross: 0, cost: 0 };
                   supplierMap.set(surchargeName, {
                      gross: currentSurcharge.gross + (sale.surcharge || 0),
-                     cost: currentSurcharge.cost // Surcharge has no COGS
+                     cost: currentSurcharge.cost
                   });
                }
             });
@@ -391,7 +562,6 @@ export const DataReports: React.FC<DataReportsProps> = ({
                   profit: data.gross - data.cost
                }));
 
-            // Sort by absolute gross value descending (so large negative discounts don't drop to the bottom inappropriately, but usually we just want purely highest gross at top)
             return result.sort((a, b) => b.gross - a.gross);
          })()
       };
@@ -476,6 +646,203 @@ export const DataReports: React.FC<DataReportsProps> = ({
                         ))}
                      </select>
                   </div>
+
+                  {/* Per-Supplier Summary when filtered */}
+                  {supplierFilter !== 'all' && (() => {
+                     const selSup = suppliers.find(s => s.id === supplierFilter);
+                     let sCost = 0;
+                     let sVentaBruta = 0;
+                     let sPromoDiscount = 0;
+
+                     // Helper: check if an item belongs to the selected supplier
+                     const isSupplierItem = (itemId: string, itemSupplierId?: string) => {
+                        if (itemSupplierId === supplierFilter) return true;
+                        const p = products.find(x => x.id === itemId);
+                        if (p && p.supplierId === supplierFilter) return true;
+                        const b = bulkProducts.find(x => x.id === itemId);
+                        if (b && b.supplierId === supplierFilter) return true;
+                        return false;
+                     };
+
+                     filteredSales.forEach(sale => {
+                        const saleItems = sale.items || [];
+                        const ticketGross = saleItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+                        const ticketNet = sale.total - (sale.surcharge || 0);
+                        const actualTicketDiscount = Math.max(0, ticketGross - ticketNet);
+
+                        let supplierGross = 0;
+                        saleItems.forEach(item => {
+                           if (isSupplierItem(item.id, item.supplierId)) {
+                              supplierGross += item.price * item.quantity;
+                              sCost += (item.cost || 0) * item.quantity;
+                           }
+                        });
+                        sVentaBruta += supplierGross;
+
+                        if (actualTicketDiscount > 0 && supplierGross > 0) {
+                           const cartMap: Record<string, number> = {};
+                           const pidToSupplier: Record<string, string> = {};
+                           saleItems.forEach(item => {
+                              const pid = (item as any).productId || (item as any).product_id || item.id;
+                              cartMap[pid] = (cartMap[pid] || 0) + item.quantity;
+                              // resolve supplier for pid
+                              let itemSup = 'Desconocido';
+                              if (item.supplierId) itemSup = item.supplierId;
+                              else {
+                                 const p = products.find(x => x.id === pid);
+                                 if (p && p.supplierId) itemSup = p.supplierId;
+                                 else {
+                                    const b = bulkProducts.find(x => x.id === pid);
+                                    if (b && b.supplierId) itemSup = b.supplierId;
+                                 }
+                              }
+                              pidToSupplier[pid] = itemSup;
+                           });
+
+                           const supplierPromoDiscount = new Map<string, number>();
+                           const sortedPromos = [...promotions].filter(p => p.active).sort((a, b) => (b.promoPrice || 0) - (a.promoPrice || 0));
+
+                           for (const promo of sortedPromos) {
+                              let triggers = promo.triggerProductIds || (promo as any).trigger_product_ids || [];
+                              if (typeof triggers === 'string') { try { triggers = JSON.parse(triggers) } catch (e) { triggers = [] } }
+
+                              let reqs = promo.requirements || [];
+                              if (typeof reqs === 'string') { try { reqs = JSON.parse(reqs) } catch (e) { reqs = [] } }
+
+                              const promoPrice = promo.promoPrice || (promo as any).promo_price || 0;
+                              const promoType = promo.type || (promo as any).type || 'standard';
+                              const qtyReq = promo.quantityRequired || (promo as any).quantity_required || 0;
+
+                              if (promoType === 'flexible' && qtyReq > 0) {
+                                 const matchingPids = (triggers as string[]).filter(pid => (cartMap[pid] || 0) > 0);
+                                 let totalAvailable = matchingPids.reduce((sum, pid) => sum + (cartMap[pid] || 0), 0);
+                                 const combosPossible = Math.floor(totalAvailable / qtyReq);
+
+                                 if (combosPossible > 0) {
+                                    const availableUnits: { id: string, price: number }[] = [];
+                                    matchingPids.forEach(pid => {
+                                       const product = products.find(p => p.id === pid) || bulkProducts.find((p: any) => p.id === pid);
+                                       const qty = cartMap[pid] || 0;
+                                       for (let i = 0; i < qty; i++) availableUnits.push({ id: pid, price: (product as any)?.price || 0 });
+                                    });
+                                    availableUnits.sort((a, b) => b.price - a.price);
+
+                                    const unitsUsed = availableUnits.slice(0, combosPossible * qtyReq);
+                                    const regularPriceSum = unitsUsed.reduce((sum, u) => sum + u.price, 0);
+                                    unitsUsed.forEach(u => { if (cartMap[u.id] > 0) cartMap[u.id]--; });
+
+                                    const discount = regularPriceSum - (combosPossible * promoPrice);
+                                    if (discount > 0) {
+                                       const supId = pidToSupplier[unitsUsed[0]?.id] || 'Desconocido';
+                                       supplierPromoDiscount.set(supId, (supplierPromoDiscount.get(supId) || 0) + discount);
+                                    }
+                                 }
+                              } else if (promoType === 'weighted' && Array.isArray(reqs) && reqs.length > 0) {
+                                 let possibleCombos = Infinity;
+                                 for (const req of reqs as any[]) {
+                                    const minWeight = Number(req.minWeight || 0);
+                                    const pid = req.productId || req.product_id;
+                                    const availableWeight = cartMap[pid] || 0;
+                                    if (availableWeight < minWeight) { possibleCombos = 0; break; }
+                                    const limit = Math.floor(availableWeight / minWeight);
+                                    if (limit < possibleCombos) possibleCombos = limit;
+                                 }
+                                 if (possibleCombos === Infinity) possibleCombos = 0;
+
+                                 if (possibleCombos > 0) {
+                                    let regularPricePerCombo = 0;
+                                    reqs.forEach((req: any) => {
+                                       const minWeight = Number(req.minWeight || 0);
+                                       const pid = req.productId || req.product_id;
+                                       const product = products.find(p => p.id === pid) || bulkProducts.find((p: any) => p.id === pid);
+                                       const pricePerKg = (product as any)?.price || (product as any)?.pricePerKg || 0;
+                                       regularPricePerCombo += (minWeight * pricePerKg);
+                                       cartMap[pid] -= (possibleCombos * minWeight);
+                                    });
+                                    const savingsPerCombo = regularPricePerCombo - promoPrice;
+                                    if (savingsPerCombo > 0) {
+                                       const firstPid = (reqs[0] as any)?.productId || (reqs[0] as any)?.product_id;
+                                       const supId = pidToSupplier[firstPid] || 'Desconocido';
+                                       supplierPromoDiscount.set(supId, (supplierPromoDiscount.get(supId) || 0) + (savingsPerCombo * possibleCombos));
+                                    }
+                                 }
+                              } else {
+                                 const requirements: Record<string, number> = {};
+                                 (triggers as string[]).forEach((pid: string) => {
+                                    requirements[pid] = (requirements[pid] || 0) + 1;
+                                 });
+                                 while (true) {
+                                    const canApply = Object.entries(requirements).every(([pid, req]) => (cartMap[pid] || 0) >= req);
+                                    if (!canApply) break;
+                                    Object.entries(requirements).forEach(([pid, req]) => { cartMap[pid] -= req; });
+                                    const regularSum = (triggers as string[]).reduce((sum, pid) => {
+                                       const p = products.find(prod => prod.id === pid) || bulkProducts.find((prod: any) => prod.id === pid);
+                                       return sum + ((p as any)?.price || 0);
+                                    }, 0);
+                                    const discount = regularSum - promoPrice;
+                                    if (discount > 0) {
+                                       const supId = pidToSupplier[(triggers as string[])[0]] || 'Desconocido';
+                                       supplierPromoDiscount.set(supId, (supplierPromoDiscount.get(supId) || 0) + discount);
+                                    }
+                                 }
+                              }
+                           }
+
+                           let totalDetectedDiscount = 0;
+                           supplierPromoDiscount.forEach(d => totalDetectedDiscount += d);
+
+                           // Attribute to selected supplier
+                           const baseDetectedForSupplier = supplierPromoDiscount.get(supplierFilter) || 0;
+                           let finalSupplierDiscount = baseDetectedForSupplier;
+
+                           if (totalDetectedDiscount > 0 && totalDetectedDiscount < actualTicketDiscount) {
+                              // Distribute remainder ONLY among suppliers who had a promo detected (Option B)
+                              const remainder = actualTicketDiscount - totalDetectedDiscount;
+                              const ratio = baseDetectedForSupplier / totalDetectedDiscount;
+                              finalSupplierDiscount += remainder * ratio;
+                           } else if (totalDetectedDiscount > actualTicketDiscount) {
+                              // Cap if engine overcalculated
+                              const scaleFactor = actualTicketDiscount / totalDetectedDiscount;
+                              finalSupplierDiscount = baseDetectedForSupplier * scaleFactor;
+                           }
+                           // NOTE: If totalDetectedDiscount === 0, it's an orphaned discount. Option B: We don't deduct it from any supplier.
+
+                           sPromoDiscount += finalSupplierDiscount;
+                        }
+                     });
+
+                     const sVentaNeta = sVentaBruta - sPromoDiscount;
+                     return (
+                        <div className="mt-3 space-y-2">
+                           <div className="bg-blue-50 px-3 py-2 rounded-lg border border-blue-100">
+                              <p className="text-[10px] text-blue-600 font-bold uppercase">Costo {selSup?.name}</p>
+                              <p className="text-lg font-bold text-blue-700">${Math.round(sCost).toLocaleString('es-AR')}</p>
+                           </div>
+                           <div className="bg-green-50 px-3 py-2 rounded-lg border border-green-100">
+                              <p className="text-[10px] text-green-600 font-bold uppercase">Venta Bruta {selSup?.name}</p>
+                              <p className="text-lg font-bold text-green-700">${Math.round(sVentaBruta).toLocaleString('es-AR')}</p>
+                           </div>
+                           {sPromoDiscount > 0 && (
+                              <div className="bg-red-50 px-3 py-2 rounded-lg border border-red-100">
+                                 <p className="text-[10px] text-red-600 font-bold uppercase">Desc. Promos {selSup?.name}</p>
+                                 <p className="text-lg font-bold text-red-600">-${Math.round(sPromoDiscount).toLocaleString('es-AR')}</p>
+                              </div>
+                           )}
+                           <div className="bg-purple-50 px-3 py-2 rounded-lg border border-purple-100">
+                              <p className="text-[10px] text-purple-600 font-bold uppercase">Venta Neta {selSup?.name}</p>
+                              <p className="text-lg font-bold text-purple-700">${Math.round(sVentaNeta).toLocaleString('es-AR')}</p>
+                           </div>
+                           <div className="bg-amber-50 px-3 py-2 rounded-lg border border-amber-100">
+                              <p className="text-[10px] text-amber-600 font-bold uppercase">Ganancia Neta {selSup?.name}</p>
+                              <p className="text-lg font-bold text-amber-700">${Math.round(sVentaNeta - sCost).toLocaleString('es-AR')}</p>
+                           </div>
+                        </div>
+                     );
+                  })()}
+
+
+
+
 
                   <div className="space-y-2">
                      <label className="text-xs font-bold text-gray-500 uppercase">Buscar Item</label>
@@ -869,7 +1236,7 @@ export const DataReports: React.FC<DataReportsProps> = ({
 
          {/* Ticket Modal */}
          {selectedSale && (
-            <TicketModal sale={selectedSale} onClose={() => setSelectedSale(null)} />
+            <TicketModal sale={selectedSale} onClose={() => setSelectedSale(null)} promotions={promotions} />
          )}
       </div>
    );

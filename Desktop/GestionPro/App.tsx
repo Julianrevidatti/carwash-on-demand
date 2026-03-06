@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { Menu, Loader2, AlertTriangle, Lock, LogOut } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import { Session } from '@supabase/supabase-js'; // SUPABASE AUTH
@@ -9,27 +9,28 @@ import { deductStockFromBatches } from './services/inventoryService';
 import { expenseService } from './src/services/expenseService'; // ADDED
 import { INITIAL_PRODUCTS, INITIAL_BATCHES, INITIAL_SUPPLIERS, INITIAL_CLIENTS, INITIAL_PAYMENT_METHODS, INITIAL_SETTINGS, INITIAL_PROMOTIONS } from './src/data/initialData';
 
-// Components
-import { DashboardV2 } from './components/DashboardV2';
-import { InventoryV2 } from './components/InventoryV2';
-import { POS } from './components/POS';
-import { CashControl } from './components/CashControl';
-import { Settings } from './components/Settings';
+// Lazy Loaded Components
+const DashboardV2 = lazy(() => import('./components/DashboardV2').then(m => ({ default: m.DashboardV2 })));
+const InventoryV2 = lazy(() => import('./components/InventoryV2').then(m => ({ default: m.InventoryV2 })));
+const POS = lazy(() => import('./components/POS').then(m => ({ default: m.POS })));
+const CashControl = lazy(() => import('./components/CashControl').then(m => ({ default: m.CashControl })));
+const Settings = lazy(() => import('./components/Settings').then(m => ({ default: m.Settings })));
+const DataReports = lazy(() => import('./components/DataReports').then(m => ({ default: m.DataReports })));
+const CashFlow = lazy(() => import('./components/CashFlow').then(m => ({ default: m.CashFlow })));
+const Suppliers = lazy(() => import('./components/Suppliers').then(m => ({ default: m.Suppliers })));
+const Promotions = lazy(() => import('./components/Promotions').then(m => ({ default: m.Promotions })));
+const SaaSAdmin = lazy(() => import('./components/SaaSAdmin').then(m => ({ default: m.SaaSAdmin })));
+const Clients = lazy(() => import('./src/components/Clients').then(m => ({ default: m.Clients })));
+const ExpensesManager = lazy(() => import('./components/ExpensesManager').then(m => ({ default: m.ExpensesManager })));
+const Tutorials = lazy(() => import('./components/Tutorials').then(m => ({ default: m.Tutorials })));
+
 import { Sidebar } from './components/Sidebar';
-import { DataReports } from './components/DataReports';
-import { CashFlow } from './components/CashFlow';
-import { Suppliers } from './components/Suppliers';
-import { Promotions } from './components/Promotions';
-import { SaaSAdmin } from './components/SaaSAdmin';
 import { LandingPage } from './components/LandingPage';
 import { SubscriptionModal } from './components/SubscriptionModal';
-import { Clients } from './src/components/Clients';
 import { SessionLockScreen } from './components/SessionLockScreen';
 import { OnboardingTour } from './components/OnboardingTour';
 import { OperatorLockScreen } from './components/OperatorLockScreen';
-import { SupabaseAuthLogin } from './components/SupabaseAuthLogin'; // SUPABASE AUTH LOGIN
-import { ExpensesManager } from './components/ExpensesManager';
-import { Tutorials } from './components/Tutorials';
+import { SupabaseAuthLogin } from './components/SupabaseAuthLogin';
 import { usePlanPermissions } from './hooks/usePlanPermissions';
 import { useUserPermissions } from './hooks/useUserPermissions';
 import { PERMISSIONS } from './config/permissions';
@@ -50,6 +51,8 @@ const SYSTEM_OWNER_EMAIL = "julianrevidatti817@gmail.com";
 import { PublicCatalog } from './components/PublicCatalog'; // ADDED
 import { PaymentSuccessPage } from './components/PaymentSuccessPage'; // PAYMENT CONFIRMATION
 import { GraceWarningModal } from './components/GraceWarningModal'; // GRACE PERIOD WARNING
+import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { TermsOfService } from './components/TermsOfService';
 
 const MainApp: React.FC = () => {
 
@@ -466,14 +469,41 @@ const MainApp: React.FC = () => {
         return;
       }
 
-      // 1. Fetch Payment Methods and CRITICAL settings immediately and in parallel
-      useStore.getState().fetchPaymentMethods();
+      // 1. Fetch Payment Methods and CRITICAL settings immediately
       useStore.getState().fetchSettings();
+      useStore.getState().fetchPaymentMethods().then(() => {
+        const pm = useStore.getState().paymentMethods;
+        const role = useStore.getState().currentUser?.role;
+        // 2. Payment Methods Seeding (For ANY Admin/SysAdmin if missing)
+        if (pm.length === 0 && (role === 'admin' || role === 'sysadmin')) {
+          console.log("Seeding payment methods after fetch...");
+          useStore.getState().updatePaymentMethods(INITIAL_PAYMENT_METHODS);
+        }
 
-      // 2. Fetch other business data in parallel without blocking
-      useStore.getState().fetchProducts();
-      useStore.getState().fetchSales();
-      useStore.getState().fetchSessions();
+        // 3. ONLY AFTER Payment Methods load, blast the network with heavy queries.
+        // This ensures the POS has payment methods instantly, even if the 3000 sales take a minute.
+        Promise.all([
+          useStore.getState().fetchProducts(),
+          useStore.getState().fetchSales(),
+          useStore.getState().fetchSessions()
+        ]).then(() => {
+          // 4. SysAdmin Specific Seeding (Products, etc.)
+          const state = useStore.getState();
+          if (state.currentUser?.role === 'sysadmin' && (state.products.length === 0 || state.suppliers.length === 0)) {
+            console.log("Seeding initial data for SysAdmin after fetch...");
+            Promise.all([
+              state.seedSuppliers(INITIAL_SUPPLIERS),
+              state.seedClients(INITIAL_CLIENTS),
+              state.seedProducts(INITIAL_PRODUCTS),
+              state.seedBatches(INITIAL_BATCHES),
+              state.seedPromotions(INITIAL_PROMOTIONS),
+              state.updateSettings(INITIAL_SETTINGS)
+              // Payment methods handled above
+            ]);
+          }
+        }); // Close the then() for Promise.all
+
+      }); // <-- THIS CLOSES useStore.getState().fetchPaymentMethods().then(() => {
 
       // Load Expenses (NEW)
       expenseService.getExpenses(tenantId).then(loadedExpenses => {
@@ -481,6 +511,7 @@ const MainApp: React.FC = () => {
       }).catch(err => {
         console.error("Failed to load expenses", err);
       });
+
     };
     fetchData();
 
@@ -561,33 +592,7 @@ const MainApp: React.FC = () => {
       return;
     }
 
-    // SEEDING LOGIC
-    // 1. SysAdmin Specific Seeding (Products, etc.)
-    if (currentUser.role === 'sysadmin' && (products.length === 0 || suppliers.length === 0)) {
-      console.log("Seeding initial data for SysAdmin...");
-      dataSeededRef.current = true;
-
-      const seedInitialData = async () => {
-        await Promise.all([
-          useStore.getState().seedSuppliers(INITIAL_SUPPLIERS),
-          useStore.getState().seedClients(INITIAL_CLIENTS),
-          useStore.getState().seedProducts(INITIAL_PRODUCTS),
-          useStore.getState().seedBatches(INITIAL_BATCHES),
-          useStore.getState().seedPromotions(INITIAL_PROMOTIONS),
-          useStore.getState().updateSettings(INITIAL_SETTINGS),
-          useStore.getState().updatePaymentMethods(INITIAL_PAYMENT_METHODS)
-        ]);
-      };
-
-      seedInitialData();
-    }
-
-    // 2. Payment Methods Seeding (For ANY Admin/SysAdmin if missing)
-    if ((currentUser.role === 'sysadmin' || currentUser.role === 'admin') && paymentMethods.length === 0) {
-      console.log("Seeding payment methods with batch upsert...");
-      dataSeededRef.current = true;
-      updatePaymentMethods(INITIAL_PAYMENT_METHODS);
-    }
+    // SEEDING LOGIC MOVED TO fetchData() to prevent race conditions
   }, [currentUser]); // Only depend on currentUser
 
 
@@ -643,49 +648,19 @@ const MainApp: React.FC = () => {
           diffTime
         });
 
-        // GRACE PERIOD INITIALIZATION
-        // If license expired (diffDays <= 0) and grace_period_start is NULL, initialize it
+        // Grace Period Calculation - Derived strictly from the due date
         const isPaidPlan = myTenant.pricingPlan !== 'FREE';
-
-        // Grace Period Calculation - More intuitive logic (Date based)
-        // If gracePeriodStart exists, calculate days from there
-        // We use Math.floor to give the user the benefit of the partial day
-        const graceDaysElapsed = myTenant.gracePeriodStart
-          ? Math.floor((new Date().getTime() - new Date(myTenant.gracePeriodStart).getTime()) / (1000 * 60 * 60 * 24))
-          : 0;
-
         const gracePeriodDays = isPaidPlan ? 5 : 0;
-        const graceDaysRemaining = Math.max(0, gracePeriodDays - graceDaysElapsed);
+
+        const daysExpired = diffDays < 0 ? Math.abs(diffDays) : 0;
+        const graceDaysRemaining = Math.max(0, gracePeriodDays - daysExpired);
 
         // Only show warning if we are actually in grace period (expired but not exhausted)
         const isInGracePeriod = diffDays <= 0 && graceDaysRemaining > 0 && isPaidPlan;
 
-        if (diffDays <= 0 && !myTenant.gracePeriodStart && isPaidPlan) {
-          console.log('🕒 Iniciando período de gracia para tenant:', myTenant.businessName);
-          const updatedTenant = {
-            ...myTenant,
-            gracePeriodStart: new Date().toISOString()
-          };
-          updateTenant(updatedTenant);
-        }
-
-        // Reset grace_period_start if license is renewed (diffDays > 0)
-        if (diffDays > 0 && myTenant.gracePeriodStart) {
-          console.log('✅ Licencia renovada, reseteando grace period para:', myTenant.businessName);
-          const updatedTenant = {
-            ...myTenant,
-            gracePeriodStart: undefined,
-            status: 'ACTIVE' as const
-          };
-          updateTenant(updatedTenant);
-        }
-
-        // Blocking Logic with Grace Period
-        // FREE: No grace period (immediate block)
-        // PAID: 5 days grace period from grace_period_start
         console.log('🔍 GRACE PERIOD DEBUG - Grace Calculations:', {
-          gracePeriodStart: myTenant.gracePeriodStart,
-          graceDaysElapsed,
+          diffDays,
+          daysExpired,
           gracePeriodDays,
           graceDaysRemaining
         });
@@ -713,7 +688,7 @@ const MainApp: React.FC = () => {
         }
       }
     }
-  }, [currentUser, saasClients, updateTenant]);
+  }, [currentUser, saasClients, updateTenant, currentTenant]);
 
   // Handlers (Wrappers around Store Actions)
   const handleLogout = async () => {
@@ -870,45 +845,82 @@ const MainApp: React.FC = () => {
 
   // System Admin View
   if (currentUser.role === 'sysadmin') {
-    return <SaaSAdmin
-      onLogout={handleLogout}
-      currentUser={currentUser}
-      clients={saasClients}
-      onUpdateClients={(clients) => clients.forEach(updateTenant)} // Adapter
-      onRegisterTenant={(data, creds) => {
-        // Adapter for registerTenant
-        const newClient: SaaSClient = {
-          id: crypto.randomUUID(),
-          businessName: data.businessName || '',
-          contactName: data.contactName || '',
-          status: data.status || 'PENDING',
-          paymentStatus: data.paymentStatus || 'PENDING',
-          pricingPlan: data.pricingPlan || 'FREE',
-          pendingAmount: data.pendingAmount || 0,
-          paymentMethod: data.paymentMethod || 'Manual',
-          nextDueDate: data.nextDueDate || new Date().toISOString(),
-          ...data,
-          adminUsername: creds.username,
-          lastLogin: new Date().toISOString()
-        } as SaaSClient;
-        registerTenant(newClient);
-      }}
-      onToggleStatus={(id) => {
-        const client = saasClients.find(c => c.id === id);
-        if (client) updateTenant({ ...client, status: client.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE' });
-      }}
-      onDeleteTenant={() => { }} // Not implemented in store yet
-      onRenewLicense={(id, days) => {
-        const client = saasClients.find(c => c.id === id);
-        if (client) {
-          const today = new Date();
-          const currentExpiry = new Date(client.nextDueDate);
-          let newDueDate = currentExpiry < today ? new Date(today) : new Date(currentExpiry);
-          newDueDate.setDate(newDueDate.getDate() + days);
-          updateTenant({ ...client, nextDueDate: newDueDate.toISOString(), status: 'ACTIVE', paymentStatus: 'PAID', pendingAmount: 0 });
-        }
-      }}
-    />;
+    return (
+      <Suspense fallback={
+        <div className="flex-1 flex items-center justify-center min-h-screen bg-gray-50">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+            <p className="text-sm font-medium text-gray-500">Cargando panel de administración...</p>
+          </div>
+        </div>
+      }>
+        <SaaSAdmin
+          onLogout={handleLogout}
+          currentUser={currentUser}
+          clients={saasClients}
+          onUpdateClients={(clients) => clients.forEach(updateTenant)} // Adapter
+          onRegisterTenant={async (data, creds) => {
+            // Validate required fields
+            if (!data.businessName || !creds.username || !creds.password) {
+              toast.error('Faltan campos obligatorios', { description: 'Nombre de negocio, email y contraseña son obligatorios' });
+              return;
+            }
+
+            const loadingToast = toast.loading('Creando cuenta de cliente...');
+
+            try {
+              const result = await useStore.getState().createTenantUser({
+                email: creds.username,
+                password: creds.password,
+                businessName: data.businessName,
+                pricingPlan: data.pricingPlan || 'PRO',
+                address: data.address,
+                cuit: data.cuit
+              });
+
+              if (result.success) {
+                toast.success('¡Cliente registrado exitosamente!', {
+                  id: loadingToast,
+                  description: 'Credenciales listas para entregar.'
+                });
+              } else {
+                toast.error('Error al registrar', {
+                  id: loadingToast,
+                  description: result.error
+                });
+              }
+            } catch (error: any) {
+              toast.error('Error inesperado', {
+                id: loadingToast,
+                description: error.message
+              });
+            }
+          }}
+          onToggleStatus={(id) => {
+            const client = saasClients.find(c => c.id === id);
+            if (client) updateTenant({ ...client, status: client.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE' });
+          }}
+          onDeleteTenant={async (id) => {
+            try {
+              await useStore.getState().deleteTenant(id);
+              toast.success('Cliente eliminado correctamente');
+            } catch (error) {
+              toast.error('Error al eliminar cliente');
+            }
+          }}
+          onRenewLicense={(id, days) => {
+            const client = saasClients.find(c => c.id === id);
+            if (client) {
+              const today = new Date();
+              const currentExpiry = new Date(client.nextDueDate);
+              let newDueDate = currentExpiry < today ? new Date(today) : new Date(currentExpiry);
+              newDueDate.setDate(newDueDate.getDate() + days);
+              updateTenant({ ...client, nextDueDate: newDueDate.toISOString(), status: 'ACTIVE', paymentStatus: 'PAID', pendingAmount: 0, gracePeriodStart: undefined });
+            }
+          }}
+        />
+      </Suspense>
+    );
   }
 
   // 4. Checking License Status
@@ -1219,8 +1231,17 @@ const MainApp: React.FC = () => {
             </div>
           </div>
         </header>
-        <div className="p-6 max-w-7xl mx-auto">
-          {renderContent()}
+        <div className="p-6 max-w-7xl mx-auto flex-1 flex flex-col">
+          <Suspense fallback={
+            <div className="flex-1 flex items-center justify-center min-h-[50vh]">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                <p className="text-sm font-medium text-gray-500">Cargando módulo...</p>
+              </div>
+            </div>
+          }>
+            {renderContent()}
+          </Suspense>
         </div>
       </main>
     </div>
@@ -1231,6 +1252,8 @@ const MainApp: React.FC = () => {
 const App: React.FC = () => {
   // 1. PUBLIC CATALOG ROUTE CHECK
   const [catalogId, setCatalogId] = useState<string | null>(null);
+  const [isPrivacy, setIsPrivacy] = useState(false);
+  const [isTerms, setIsTerms] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -1238,10 +1261,24 @@ const App: React.FC = () => {
     if (catId) {
       setCatalogId(catId);
     }
+    if (params.has('privacy')) {
+      setIsPrivacy(true);
+    }
+    if (params.has('terms')) {
+      setIsTerms(true);
+    }
   }, []);
 
   if (catalogId) {
     return <PublicCatalog tenantId={catalogId} />;
+  }
+
+  if (isPrivacy) {
+    return <PrivacyPolicy />;
+  }
+
+  if (isTerms) {
+    return <TermsOfService />;
   }
 
   return <MainApp />;

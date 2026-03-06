@@ -18,10 +18,11 @@ export interface AuthSlice {
   setCurrentTenant: (tenant: SaaSClient | null) => void;
   fetchTenantByEmail: (email: string, userId?: string) => Promise<SaaSClient | null>;
   registerTenant: (client: SaaSClient) => Promise<void>;
+  createTenantUser: (data: any) => Promise<{ success: boolean; tenantId?: string; error?: string }>;
   updateTenant: (client: SaaSClient) => Promise<void>;
-  fetchCurrentTenant: (tenantId: string) => Promise<void>;
-  verifySubscriptionPayment: (externalReference: string, plan: PricingPlan) => Promise<boolean>;
   fetchAllTenants: () => Promise<void>;
+  fetchCurrentTenant: (tenantId: string) => Promise<void>;
+  deleteTenant: (id: string) => Promise<void>;
 }
 
 export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
@@ -114,6 +115,32 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
     if (error) throw error;
   },
 
+  createTenantUser: async (data) => {
+    try {
+      const response = await supabase.functions.invoke('create-tenant-user', {
+        body: data
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Error invocando la función');
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      // Automatically refresh the tenant list
+      if (response.data?.success) {
+        await get().fetchAllTenants();
+      }
+
+      return { success: true, tenantId: response.data?.tenantId };
+    } catch (error: any) {
+      console.error('Error creating tenant user:', error);
+      return { success: false, error: error.message || 'Error al crear el usuario' };
+    }
+  },
+
   updateTenant: async (client) => {
     const currentUser = get().currentUser;
     const isCurrentTenant = get().currentTenant?.id === client.id;
@@ -199,15 +226,23 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
       const currentTenant = get().currentTenant;
       if (!currentTenant) return false;
 
-      // Calculate next due date (30 days from now)
+      // Calculate next due date (30 days from now or extend existing)
       const nextDue = new Date();
+      if (currentTenant.nextDueDate) {
+        const currentDueDate = new Date(currentTenant.nextDueDate);
+        if (currentDueDate > nextDue) {
+          nextDue.setTime(currentDueDate.getTime());
+        }
+      }
       nextDue.setDate(nextDue.getDate() + 30);
       const nextDueDateISO = nextDue.toISOString();
 
       const { error } = await supabase.from('tenants').update({
         pricing_plan: plan,
         next_due_date: nextDueDateISO,
-        payment_status: 'paid'
+        payment_status: 'PAID',
+        status: 'ACTIVE',
+        grace_period_start: null
       }).eq('id', tenantId); // Use tenantId parameter instead of currentTenant.id
 
       if (error) throw error;
@@ -217,11 +252,13 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
         ...currentTenant,
         pricingPlan: plan,
         nextDueDate: nextDueDateISO,
-        paymentStatus: 'paid' as any
+        paymentStatus: 'PAID' as any,
+        status: 'ACTIVE' as const,
+        gracePeriodStart: undefined
       };
 
       const currentUser = get().currentUser;
-      const updatedUser = currentUser ? { ...currentUser, subscriptionExpiry: nextDueDateISO } : null;
+      const updatedUser = currentUser ? { ...currentUser, subscriptionExpiry: nextDueDateISO, status: 'ACTIVE' as const } : null;
 
       set({
         currentTenant: updatedTenant,
@@ -261,6 +298,18 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
         gracePeriodStart: d.grace_period_start
       }));
       set({ saasClients: allTenants });
+    }
+  },
+
+  deleteTenant: async (id) => {
+    set((state) => ({
+      saasClients: state.saasClients.filter((c) => c.id !== id),
+    }));
+    const { error } = await supabase.from('tenants').delete().eq('id', id);
+    if (error) {
+      console.error(error);
+      get().fetchAllTenants();
+      throw error;
     }
   },
 });

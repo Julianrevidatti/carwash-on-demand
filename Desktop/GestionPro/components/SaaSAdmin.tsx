@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { SaaSClient, User } from '../types';
-import { Server, ShieldAlert, LogOut, Users, CheckCircle, Lock, DollarSign, RefreshCw, Unlock, X, Calendar, Plus, CreditCard, Award, Settings as SettingsIcon, MapPin } from 'lucide-react';
+import { Server, ShieldAlert, LogOut, Users, CheckCircle, Lock, DollarSign, RefreshCw, Unlock, X, Calendar, Plus, CreditCard, Award, Settings as SettingsIcon, MapPin, Trash2 } from 'lucide-react';
 import { PLATFORM_MP_CONFIG } from '../config/planLimits';
 
 interface SaaSAdminProps {
@@ -9,7 +9,7 @@ interface SaaSAdminProps {
   currentUser: User;
   clients: SaaSClient[];
   onUpdateClients: (clients: SaaSClient[]) => void;
-  onRegisterTenant: (data: Partial<SaaSClient>, creds: { username: string }) => void;
+  onRegisterTenant: (data: Partial<SaaSClient>, creds: { username: string, password?: string }) => void;
   onToggleStatus: (id: string) => void;
   onDeleteTenant: (id: string) => void;
   onRenewLicense: (id: string, days: number) => void;
@@ -78,11 +78,10 @@ export const SaaSAdmin: React.FC<SaaSAdminProps> = ({
         address: newClientData.address,
         cuit: newClientData.cuit
       },
-      { username: newClientData.email } // Password handling should be done in API/Store but mock here
+      { username: newClientData.email, password: newClientData.password }
     );
     setIsRegisterModalOpen(false);
     setNewClientData({ businessName: '', email: '', password: '', plan: 'PRO', address: '', cuit: '' });
-    alert('Cliente registrado exitosamente');
   };
 
   const handleRenewClick = (client: SaaSClient) => {
@@ -278,10 +277,21 @@ export const SaaSAdmin: React.FC<SaaSAdminProps> = ({
                         </button>
                         <button
                           onClick={() => onToggleStatus(client.id)}
-                          className={`${client.status === 'ACTIVE' ? 'text-red-600 hover:bg-red-50' : 'text-emerald-600 hover:bg-emerald-50'} p-2 rounded-lg transition-colors`}
+                          className={`${client.status === 'ACTIVE' ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'} p-2 rounded-lg transition-colors`}
                           title={client.status === 'ACTIVE' ? 'Bloquear Acceso' : 'Desbloquear Acceso'}
                         >
                           {client.status === 'ACTIVE' ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm("¿Seguro que desea eliminar esta cuenta? Todo su contenido se perderá.")) {
+                              onDeleteTenant(client.id);
+                            }
+                          }}
+                          className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                          title="Eliminar Cuenta"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
@@ -431,16 +441,29 @@ export const SaaSAdmin: React.FC<SaaSAdminProps> = ({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email (Usuario Admin)</label>
-                <input
-                  type="email"
-                  required
-                  value={newClientData.email}
-                  onChange={e => setNewClientData({ ...newClientData, email: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-emerald-500 outline-none"
-                  placeholder="cliente@email.com"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email (Usuario Admin)</label>
+                  <input
+                    type="email"
+                    required
+                    value={newClientData.email}
+                    onChange={e => setNewClientData({ ...newClientData, email: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-emerald-500 outline-none"
+                    placeholder="cliente@email.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Contraseña Temporal</label>
+                  <input
+                    type="text"
+                    required
+                    value={newClientData.password}
+                    onChange={e => setNewClientData({ ...newClientData, password: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-emerald-500 outline-none"
+                    placeholder="Ej: Gestion2024!"
+                  />
+                </div>
               </div>
 
               <div>

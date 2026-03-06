@@ -191,6 +191,7 @@ export interface Promotion {
     productId: string;
     minWeight: number;
   }[];
+  imageUrl?: string; // NEW: Promotion image for catalog
 }
 
 export interface StockMovement {

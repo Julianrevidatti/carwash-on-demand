@@ -37,14 +37,27 @@ serve(async (req) => {
                     newPlan = parts[1];
                 }
 
-                // 2. Buscamos al cliente en tu base de datos y le extendemos 30 días
+                // 1.5. Obtener fechas actuales del tenant para sumar días
+                const { data: tenantData } = await supabase
+                    .from('tenants')
+                    .select('next_due_date')
+                    .eq('id', tenantId)
+                    .single()
+
+                // 2. Calculamos nueva fecha (si ya le queda tiempo, se lo sumamos a ese tiempo, sino desde hoy)
                 const nextDue = new Date()
+                if (tenantData && tenantData.next_due_date) {
+                    const currentDueDate = new Date(tenantData.next_due_date)
+                    if (currentDueDate > nextDue) {
+                        nextDue.setTime(currentDueDate.getTime())
+                    }
+                }
                 nextDue.setDate(nextDue.getDate() + 30)
 
                 // Definimos los datos a actualizar
                 const updateData: any = {
                     next_due_date: nextDue.toISOString(),
-                    payment_status: 'paid',
+                    payment_status: 'PAID', // CORREGIDO: MAYUSCULAS
                     status: 'ACTIVE', // IMPORTANTE: Desbloquear cuenta automáticamente
                     grace_period_start: null, // Limpiar periodo de gracia si existía
                     mp_preapproval_id: id

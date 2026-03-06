@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Product, Promotion, Sale, InventoryBatch, BulkProduct } from '../types';
-import { Plus, Trash2, Tag, Save, X, ShoppingBag, Search, CheckSquare, Square, Scale, Pencil } from 'lucide-react';
+import { Plus, Trash2, Tag, Save, X, ShoppingBag, Search, CheckSquare, Square, Scale, Pencil, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '../src/lib/supabase';
+import { compressImage } from '../src/utils/imageUtils';
 
 interface PromotionsProps {
   promotions: Promotion[];
@@ -25,6 +28,8 @@ export const Promotions: React.FC<PromotionsProps> = ({ promotions, products, bu
   const [quantityRequired, setQuantityRequired] = useState('');
   const [productSearch, setProductSearch] = useState('');
   const [weightedRequirements, setWeightedRequirements] = useState<{ productId: string, minWeight: string }[]>([]);
+  const [promoImage, setPromoImage] = useState<string | undefined>(undefined);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleSave = () => {
     if (!promoName || !promoPrice) {
@@ -66,7 +71,8 @@ export const Promotions: React.FC<PromotionsProps> = ({ promotions, products, bu
       active: true,
       type: promoType,
       quantityRequired: promoType === 'flexible' ? parseInt(quantityRequired) : undefined,
-      requirements: promoType === 'weighted' ? weightedRequirements.map(r => ({ productId: r.productId, minWeight: parseFloat(r.minWeight) })) : undefined
+      requirements: promoType === 'weighted' ? weightedRequirements.map(r => ({ productId: r.productId, minWeight: parseFloat(r.minWeight) })) : undefined,
+      imageUrl: promoImage
     };
 
     if (editingPromoId) {
@@ -77,6 +83,44 @@ export const Promotions: React.FC<PromotionsProps> = ({ promotions, products, bu
     resetForm();
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      toast.info("Subiendo imagen...");
+
+      // Compress
+      const compressedBlob = await compressImage(file);
+      const compressedFile = new File([compressedBlob], file.name.replace(/\.[^/.]+$/, "") + ".webp", { type: 'image/webp' });
+
+      // Upload
+      const fileExt = 'webp';
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, compressedFile);
+
+      if (uploadError) throw uploadError;
+
+      // Get URL
+      const { data } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      setPromoImage(data.publicUrl);
+      toast.success("Imagen subida con éxito");
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error("Error al subir la imagen");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleEdit = (promo: Promotion) => {
     setEditingPromoId(promo.id);
     setPromoName(promo.name);
@@ -85,6 +129,7 @@ export const Promotions: React.FC<PromotionsProps> = ({ promotions, products, bu
     setSelectedProductIds(promo.triggerProductIds);
     setQuantityRequired(promo.quantityRequired ? promo.quantityRequired.toString() : '');
     setWeightedRequirements(promo.requirements ? promo.requirements.map(r => ({ productId: r.productId, minWeight: r.minWeight.toString() })) : []);
+    setPromoImage(promo.imageUrl);
 
     setShowForm(true);
   };
@@ -97,6 +142,7 @@ export const Promotions: React.FC<PromotionsProps> = ({ promotions, products, bu
     setPromoType('standard');
     setQuantityRequired('');
     setWeightedRequirements([]);
+    setPromoImage(undefined);
     setEditingPromoId(null);
     setShowForm(false);
   };
@@ -307,6 +353,44 @@ export const Promotions: React.FC<PromotionsProps> = ({ promotions, products, bu
                 />
               </div>
 
+              {/* IMAGE UPLOAD */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Imagen de la Promo (Catálogo Opcional)</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-xl overflow-hidden flex items-center justify-center bg-gray-50 relative group border-pink-100">
+                    {promoImage ? (
+                      <>
+                        <img src={promoImage} alt="Preview" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center transition-all">
+                          <button
+                            onClick={() => setPromoImage(undefined)}
+                            className="text-white hover:text-red-400 p-1"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <ImageIcon className="w-8 h-8 text-gray-300" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <label className={`cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${isUploading ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-pink-50 text-pink-600 hover:bg-pink-100 border border-pink-200'}`}>
+                      {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                      {promoImage ? 'Cambiar Imagen' : 'Subir Imagen'}
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={isUploading}
+                      />
+                    </label>
+                    <p className="text-xs text-gray-500 mt-2">Recomendado: 1:1 (Cuadrada). Max 2MB.</p>
+                  </div>
+                </div>
+              </div>
+
               {/* Product Selection with Search */}
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">
@@ -398,7 +482,7 @@ export const Promotions: React.FC<PromotionsProps> = ({ promotions, products, bu
                             value={req?.minWeight || ''}
                             onChange={(e) => {
                               const val = parseFloat(e.target.value);
-                              const newVal = isNaN(val) ? 0 : val;
+                              const newVal = isNaN(val) ? '' : val.toString();
                               setWeightedRequirements(prev => prev.map(r => r.productId === pid ? { ...r, minWeight: newVal } : r));
                             }}
                           />

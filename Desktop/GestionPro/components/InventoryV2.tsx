@@ -155,6 +155,13 @@ export const InventoryV2: React.FC<InventoryProps> = ({ products = [], batches =
         return () => window.removeEventListener('keydown', handleModalScan);
     }, [showAddForm]);
 
+    // NEW: Fetch full history when tab is opened
+    useEffect(() => {
+        if (activeTab === 'history') {
+            useStore.getState().fetchStockMovements(true);
+        }
+    }, [activeTab]);
+
     const handleCreateProduct = () => {
         if (!newProd.name || !newProd.barcode) {
             alert("Por favor complete los campos obligatorios (Nombre, Código).");
@@ -218,7 +225,9 @@ export const InventoryV2: React.FC<InventoryProps> = ({ products = [], batches =
                 expiryDate: entryExpiry,
                 dateAdded: new Date().toISOString()
             };
-            onAddBatch(newBatch);
+
+            // Await the addBatch so if it fails we don't proceed
+            await useStore.getState().addBatch(newBatch);
 
             // Register movement for traceability
             const product = products.find(p => p.id === selectedProductId);
@@ -231,7 +240,7 @@ export const InventoryV2: React.FC<InventoryProps> = ({ products = [], batches =
                 reason: `Lote ${entryBatchNumber}`,
                 detail: `Lote ${entryBatchNumber}`,
                 type: 'IN' as const,
-                userId: 'user'
+                userId: useStore.getState().currentUser?.id || 'unknown' // Use real user
             };
             onAddStockMovement(movement);
 
@@ -909,11 +918,20 @@ export const InventoryV2: React.FC<InventoryProps> = ({ products = [], batches =
                                     </p>
                                     <p className="text-xs text-gray-500 mb-1">de {historyData.length} total</p>
                                     <div className="bg-blue-50 px-2 py-1 rounded border border-blue-100 mt-1">
-                                        <p className="text-[10px] text-blue-600 font-bold uppercase">Valor Total</p>
+                                        <p className="text-[10px] text-blue-600 font-bold uppercase">Costo Total</p>
                                         <p className="text-sm font-bold text-blue-700">
                                             ${filteredHistory.reduce((sum, item) => {
                                                 const product = products.find(p => p.id === item.productId);
                                                 return sum + (item.quantity * (product?.cost || 0));
+                                            }, 0).toLocaleString()}
+                                        </p>
+                                    </div>
+                                    <div className="bg-green-50 px-2 py-1 rounded border border-green-100 mt-1">
+                                        <p className="text-[10px] text-green-600 font-bold uppercase">Suma Venta</p>
+                                        <p className="text-sm font-bold text-green-700">
+                                            ${filteredHistory.reduce((sum, item) => {
+                                                const product = products.find(p => p.id === item.productId);
+                                                return sum + (item.quantity * (product?.price || 0));
                                             }, 0).toLocaleString()}
                                         </p>
                                     </div>
@@ -1419,6 +1437,21 @@ const BulkProductsManager: React.FC<{
             stockKg: selectedForStock.stockKg + totalKgToAdd
         };
         onUpdate(updatedProduct);
+
+        // Register movement for traceability
+        const movement = {
+            id: crypto.randomUUID(),
+            date: new Date().toISOString(),
+            productId: selectedForStock.id,
+            productName: selectedForStock.name,
+            quantity: totalKgToAdd,
+            reason: `Ingreso Granel (${stockEntryKg} bultos de ${selectedForStock.weightPerBulk} Kg)`,
+            detail: `Ingreso Granel (${stockEntryKg} bultos de ${selectedForStock.weightPerBulk} Kg)`,
+            type: 'IN' as const,
+            userId: useStore.getState().currentUser?.id || 'unknown'
+        };
+        useStore.getState().addStockMovement(movement);
+
         setShowStockModal(false);
         setSelectedForStock(null);
         setStockEntryKg('');

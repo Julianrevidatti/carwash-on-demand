@@ -606,8 +606,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToLogin }) => {
           <div>
             <h4 className="font-bold text-white mb-4">Legal</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-white">Términos y Condiciones</a></li>
-              <li><a href="#" className="hover:text-white">Privacidad</a></li>
+              <li><a href="/?terms" className="hover:text-white">Términos y Condiciones</a></li>
+              <li><a href="/?privacy" className="hover:text-white">Privacidad</a></li>
             </ul>
           </div>
           <div>

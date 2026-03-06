@@ -108,9 +108,36 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
             set({ suppliers: mappedSuppliers });
         }
 
-        const { data: batches } = await supabase.from('inventory_batches').select('*').eq('tenant_id', tenantId);
-        if (batches) {
-            const mappedBatches = batches.map((b: any) => ({
+        // Manual Pagination Loop for batches to bypass Supabase 1000-row limit
+        const BATCH_LIMIT = 5000;
+        const BATCH_CHUNK_SIZE = 1000;
+        let allBatches: any[] = [];
+        let hasMoreBatches = true;
+        let batchPage = 0;
+
+        while (hasMoreBatches && allBatches.length < BATCH_LIMIT) {
+            const start = batchPage * BATCH_CHUNK_SIZE;
+            const end = start + BATCH_CHUNK_SIZE - 1;
+
+            const { data: chunk, error } = await supabase
+                .from('inventory_batches')
+                .select('*')
+                .eq('tenant_id', tenantId)
+                .range(start, end);
+
+            if (error || !chunk || chunk.length === 0) {
+                hasMoreBatches = false;
+            } else {
+                allBatches = [...allBatches, ...chunk];
+                batchPage++;
+                if (chunk.length < BATCH_CHUNK_SIZE) {
+                    hasMoreBatches = false; // Last page
+                }
+            }
+        }
+
+        if (allBatches.length > 0) {
+            const mappedBatches = allBatches.map((b: any) => ({
                 id: b.id,
                 productId: b.product_id,
                 batchNumber: b.batch_number,
@@ -120,6 +147,8 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
                 dateAdded: b.date_added
             }));
             set({ batches: mappedBatches });
+        } else {
+            set({ batches: [] });
         }
 
         // Fetch Stock Movements
@@ -308,7 +337,7 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
         const tenantId = state.currentTenant?.id;
         if (!tenantId) {
             toast.error('Error: No se encontró la sesión del usuario');
-            return;
+            throw new Error('No tenant ID');
         }
 
         const dbBatch = {
@@ -330,7 +359,7 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
             toast.error('Error al guardar lote en la base de datos', {
                 description: `Detalle: ${error.message}`
             });
-            return; // Stop here, do not update local state
+            throw new Error(error.message); // Stop here, do not update local state AND alert caller
         }
 
         // Update local state ONLY after successful DB insert
