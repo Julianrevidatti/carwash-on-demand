@@ -1,11 +1,11 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:material="http://schemas.android.com/apk/res-auto"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:padding="16dp"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/white">
 
     <!-- SECCIÓN DEL LOGO CENTRADO -->
     <LinearLayout
@@ -13,8 +13,8 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:paddingTop="24dp"
-        android:paddingBottom="16dp">
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp">
 
         <ImageView
             android:layout_width="40dp"
@@ -28,7 +28,7 @@
         android:id="@+id/registrarse"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="16dp"
         android:text="Mis reservas"
         android:textColor="@android:color/black"
         android:textSize="24sp"
@@ -39,38 +39,29 @@
         android:id="@+id/subtitulo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="24dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="16dp"
         android:text="Maneja tus reservas de lavado"
         android:textColor="@android:color/darker_gray"
         android:textSize="16sp"/>
 
-    <!-- SEGMENTED TABS -->
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabLayout"
+    <!-- ETIQUETA "PROGRAMADO" (ESTILO BOTÓN AZUL) -->
+    <TextView
+        android:id="@+id/tvProgramadoLabel"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-
-        material:tabIndicatorHeight="0dp"
-        material:tabBackground="@drawable/tab_selector"
-        app:backgroundTint="@color/azulcarwash"
-        material:tabSelectedTextColor="@android:color/white">
-
-        <com.google.android.material.tabs.TabItem
-            android:text="Programado"
-            android:layout_width="match_parent"
-            android:layout_height="26dp"
-            android:layout_marginTop="8dp"
-            app:backgroundTint="@color/azulcarwash"
-            android:textSize="12sp"
-            />
-
-    </com.google.android.material.tabs.TabLayout>
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/status_pill_background"
+        android:gravity="center"
+        android:text="Programados"
+        android:textColor="@color/azulcarwash"
+        android:textSize="14sp"
+        android:textStyle="bold" />
 
     <!-- LISTA -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/bookingsRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="16dp"/>
+        android:layout_marginTop="24dp"/>
 </LinearLayout>

@@ -5,13 +5,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.carwash.R
 import com.example.carwash.databinding.FragmentVehiclesBinding
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
-import kotlin.toString
 
 class VehiclesFragment : Fragment() {
 
@@ -44,7 +44,6 @@ class VehiclesFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        // Vehículo inicial de ejemplo
         if (vehicleList.isEmpty()) {
             vehicleList.add(Vehicle("Gol Power", "Volkswagen", "ABC123", "Sedan"))
         }
@@ -62,12 +61,15 @@ class VehiclesFragment : Fragment() {
         val dialog = BottomSheetDialog(requireContext())
         val view = layoutInflater.inflate(R.layout.layout_add_vehicle_bottom_sheet, null)
         
+        val tvTitle = view.findViewById<TextView>(R.id.tvSheetTitle)
         val etBrand = view.findViewById<EditText>(R.id.etBrand)
         val etModel = view.findViewById<EditText>(R.id.etModel)
         val etPlate = view.findViewById<EditText>(R.id.etPlate)
         val etType = view.findViewById<EditText>(R.id.etType)
         val btnConfirm = view.findViewById<MaterialButton>(R.id.btnConfirm)
         val btnCancel = view.findViewById<MaterialButton>(R.id.btnCancel)
+
+        tvTitle.text = "Agregar Vehículo"
 
         btnConfirm.setOnClickListener {
             val brand = etBrand.text.toString()
@@ -90,16 +92,11 @@ class VehiclesFragment : Fragment() {
         dialog.show()
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
-
     private fun showEditVehicleDialog(vehicle: Vehicle, position: Int) {
-
         val dialog = BottomSheetDialog(requireContext())
         val view = layoutInflater.inflate(R.layout.layout_add_vehicle_bottom_sheet, null)
 
+        val tvTitle = view.findViewById<TextView>(R.id.tvSheetTitle)
         val etBrand = view.findViewById<EditText>(R.id.etBrand)
         val etModel = view.findViewById<EditText>(R.id.etModel)
         val etPlate = view.findViewById<EditText>(R.id.etPlate)
@@ -107,6 +104,9 @@ class VehiclesFragment : Fragment() {
         val btnConfirm = view.findViewById<MaterialButton>(R.id.btnConfirm)
         val btnCancel = view.findViewById<MaterialButton>(R.id.btnCancel)
 
+        // CAMBIAR TÍTULO PARA EDICIÓN
+        tvTitle.text = "Editar Vehículo"
+        
         // CARGAR DATOS EXISTENTES
         etBrand.setText(vehicle.brand)
         etModel.setText(vehicle.name)
@@ -114,18 +114,14 @@ class VehiclesFragment : Fragment() {
         etType.setText(vehicle.type)
 
         btnConfirm.setOnClickListener {
-
             val brand = etBrand.text.toString()
             val model = etModel.text.toString()
             val plate = etPlate.text.toString()
             val type = etType.text.toString()
 
             if (brand.isNotEmpty() && model.isNotEmpty() && plate.isNotEmpty() && type.isNotEmpty()) {
-
                 val updatedVehicle = Vehicle(model, brand, plate, type)
-
                 adapter.updateVehicle(position, updatedVehicle)
-
                 dialog.dismiss()
             }
         }
@@ -138,7 +134,8 @@ class VehiclesFragment : Fragment() {
         dialog.show()
     }
 
-
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
 }
-
-

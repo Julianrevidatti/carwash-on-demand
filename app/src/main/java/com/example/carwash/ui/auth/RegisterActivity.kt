@@ -53,11 +53,8 @@ class RegisterActivity : AppCompatActivity() {
 
                     Toast.makeText(this, "Registro exitoso", Toast.LENGTH_SHORT).show()
 
-                    // 👉 OPCIÓN A: ir directo al home
+                    // ir directo al home
                     startActivity(Intent(this, MainActivity::class.java))
-
-                    // 👉 OPCIÓN B (si preferís volver al login):
-                    // startActivity(Intent(this, LoginActivity::class.java))
 
                     finish()
                 }

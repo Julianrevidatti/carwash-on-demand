@@ -15,7 +15,7 @@
         android:orientation="horizontal"
         android:gravity="center"
         android:paddingTop="24dp"
-        android:paddingBottom="16dp">
+        android:paddingBottom="12dp">
 
         <ImageView
             android:layout_width="40dp"
@@ -32,14 +32,14 @@
             android:layout_marginStart="12dp"/>
     </LinearLayout>
 
-    <!-- Contenido Principal (Ahora dentro de su propio LinearLayout para el padding) -->
+    <!-- Contenido Principal -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="vertical">
 
-        <!-- Contenedor Superior (saludo, búsqueda, etc.) -->
+        <!-- Contenedor Superior -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -47,44 +47,41 @@
             android:paddingStart="24dp"
             android:paddingEnd="24dp">
 
-            <!-- Saludo inicial -->
             <TextView
                 android:id="@+id/greeting_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
                 android:text="¡Hola, Andre!"
                 android:textColor="@android:color/black"
                 android:textSize="24sp"
                 android:textStyle="bold" />
 
-            <!-- Texto de ayuda -->
             <TextView
                 android:id="@+id/prompt_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="4dp"
                 android:text="¿Qué lavado necesitás hoy?"
                 android:textSize="16sp" />
 
-            <!-- Barra de búsqueda -->
             <TextView
                 android:id="@+id/search_bar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="16dp"
                 android:background="@drawable/edit_text_background"
                 android:drawableStart="@android:drawable/ic_menu_search"
                 android:drawablePadding="12dp"
                 android:gravity="center_vertical"
                 android:padding="16dp"
-                android:text="Buscar servicios" />
+                android:text="Ubicación donde recibirás el lavado" />
 
-            <!-- Título de la sección de servicios -->
             <TextView
                 android:id="@+id/services_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="32dp"
                 android:text="Nuestros Servicios"
                 android:textColor="@android:color/black"
                 android:textSize="20sp"
@@ -95,7 +92,7 @@
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="12dp"
             android:clipToPadding="false"
             android:paddingBottom="16dp">
 
@@ -103,19 +100,17 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:columnCount="2"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
                 android:useDefaultMargins="true">
 
-                <!-- Todas tus MaterialCardView van aquí (Base, Premium, Express, Detailing) -->
-                <!-- ... no es necesario cambiar el código de las tarjetas ... -->
                 <!-- Card de servicio: Base -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
                     app:cardCornerRadius="16dp"
-                    app:cardElevation="4dp">
+                    app:cardElevation="2dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -124,14 +119,13 @@
 
                         <ImageView
                             android:layout_width="match_parent"
-                            android:layout_height="100dp"
-                            android:background="@android:color/darker_gray"
+                            android:layout_height="130dp"
                             android:src="@drawable/lavadobase"
                             android:scaleType="centerCrop" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent"
+                            android:layout_height="wrap_content"
                             android:orientation="vertical"
                             android:padding="12dp">
 
@@ -145,29 +139,21 @@
 
                             <TextView
                                 android:layout_width="wrap_content"
-                                android:layout_height="0dp"
-                                android:layout_weight="1"
-                                android:text="Lavado rápido y básico. Interior y exterior."
+                                android:layout_height="wrap_content"
+                                android:text="Lavado rápido y básico."
                                 android:textColor="@android:color/darker_gray"
                                 android:textSize="12sp"
                                 android:layout_marginTop="4dp"
-                                android:layout_marginBottom="12dp"/>
+                                android:layout_marginBottom="8dp"/>
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="$22.00"
+                                android:text="$10000"
                                 android:textColor="@android:color/black"
-                                android:textSize="14sp"
+                                android:textSize="15sp"
                                 android:textStyle="bold" />
 
-                            <Button
-                                android:layout_width="match_parent"
-                                android:layout_height="40dp"
-                                android:layout_marginTop="8dp"
-                                android:text="Ver detalles"
-                                app:backgroundTint="@color/azulcarwash"
-                                android:textSize="12sp" />
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -178,7 +164,7 @@
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
                     app:cardCornerRadius="16dp"
-                    app:cardElevation="4dp">
+                    app:cardElevation="2dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -187,14 +173,13 @@
 
                         <ImageView
                             android:layout_width="match_parent"
-                            android:layout_height="100dp"
-                            android:background="@android:color/darker_gray"
+                            android:layout_height="130dp"
                             android:src="@drawable/lavadopremium"
                             android:scaleType="centerCrop" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent"
+                            android:layout_height="wrap_content"
                             android:orientation="vertical"
                             android:padding="12dp">
 
@@ -208,29 +193,21 @@
 
                             <TextView
                                 android:layout_width="wrap_content"
-                                android:layout_height="0dp"
-                                android:layout_weight="1"
-                                android:text="Lavado profundo por dentro y fuera."
+                                android:layout_height="wrap_content"
+                                android:text="Lavado profundo."
                                 android:textColor="@android:color/darker_gray"
                                 android:textSize="12sp"
                                 android:layout_marginTop="4dp"
-                                android:layout_marginBottom="12dp"/>
+                                android:layout_marginBottom="8dp"/>
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="$34.00"
+                                android:text="$25000"
                                 android:textColor="@android:color/black"
-                                android:textSize="14sp"
+                                android:textSize="15sp"
                                 android:textStyle="bold" />
 
-                            <Button
-                                android:layout_width="match_parent"
-                                android:layout_height="40dp"
-                                android:layout_marginTop="8dp"
-                                android:text="Ver detalles"
-                                app:backgroundTint="@color/azulcarwash"
-                                android:textSize="12sp" />
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -241,7 +218,7 @@
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
                     app:cardCornerRadius="16dp"
-                    app:cardElevation="4dp">
+                    app:cardElevation="2dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -250,14 +227,13 @@
 
                         <ImageView
                             android:layout_width="match_parent"
-                            android:layout_height="100dp"
-                            android:background="@android:color/darker_gray"
+                            android:layout_height="130dp"
                             android:src="@drawable/lavadoexpress"
                             android:scaleType="centerCrop" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent"
+                            android:layout_height="wrap_content"
                             android:orientation="vertical"
                             android:padding="12dp">
 
@@ -271,29 +247,21 @@
 
                             <TextView
                                 android:layout_width="wrap_content"
-                                android:layout_height="0dp"
-                                android:layout_weight="1"
-                                android:text="Lavado en menos de una hora."
+                                android:layout_height="wrap_content"
+                                android:text="Menos de una hora."
                                 android:textColor="@android:color/darker_gray"
                                 android:textSize="12sp"
                                 android:layout_marginTop="4dp"
-                                android:layout_marginBottom="12dp"/>
+                                android:layout_marginBottom="8dp"/>
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="$28.00"
+                                android:text="$15000"
                                 android:textColor="@android:color/black"
-                                android:textSize="14sp"
+                                android:textSize="15sp"
                                 android:textStyle="bold" />
 
-                            <Button
-                                android:layout_width="match_parent"
-                                android:layout_height="40dp"
-                                android:layout_marginTop="8dp"
-                                android:text="Ver detalles"
-                                app:backgroundTint="@color/azulcarwash"
-                                android:textSize="12sp" />
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -304,7 +272,7 @@
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
                     app:cardCornerRadius="16dp"
-                    app:cardElevation="4dp">
+                    app:cardElevation="2dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -313,14 +281,13 @@
 
                         <ImageView
                             android:layout_width="match_parent"
-                            android:layout_height="100dp"
-                            android:background="@android:color/darker_gray"
+                            android:layout_height="130dp"
                             android:src="@drawable/lavadodetailing"
                             android:scaleType="centerCrop" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent"
+                            android:layout_height="wrap_content"
                             android:orientation="vertical"
                             android:padding="12dp">
 
@@ -334,29 +301,21 @@
 
                             <TextView
                                 android:layout_width="wrap_content"
-                                android:layout_height="0dp"
-                                android:layout_weight="1"
-                                android:text="Lavado, encerado y pulido del vehículo."
+                                android:layout_height="wrap_content"
+                                android:text="Lavado, encerado y pulido."
                                 android:textColor="@android:color/darker_gray"
                                 android:textSize="12sp"
                                 android:layout_marginTop="4dp"
-                                android:layout_marginBottom="12dp"/>
+                                android:layout_marginBottom="8dp"/>
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="$45.00"
+                                android:text="$50000"
                                 android:textColor="@android:color/black"
-                                android:textSize="14sp"
+                                android:textSize="15sp"
                                 android:textStyle="bold" />
 
-                            <Button
-                                android:layout_width="match_parent"
-                                android:layout_height="40dp"
-                                android:layout_marginTop="8dp"
-                                android:text="Ver detalles"
-                                app:backgroundTint="@color/azulcarwash"
-                                android:textSize="12sp" />
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
