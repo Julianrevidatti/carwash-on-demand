@@ -11,6 +11,7 @@ import com.example.carwash.R
 import com.example.carwash.databinding.FragmentVehiclesBinding
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
+import kotlin.toString
 
 class VehiclesFragment : Fragment() {
 
@@ -48,7 +49,9 @@ class VehiclesFragment : Fragment() {
             vehicleList.add(Vehicle("Gol Power", "Volkswagen", "ABC123", "Sedan"))
         }
 
-        adapter = VehiclesAdapter(vehicleList)
+        adapter = VehiclesAdapter(vehicleList) { vehicle, position ->
+            showEditVehicleDialog(vehicle, position)
+        }
         binding.rvVehicles.apply {
             layoutManager = LinearLayoutManager(context)
             this.adapter = this@VehiclesFragment.adapter
@@ -91,4 +94,51 @@ class VehiclesFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
+
+    private fun showEditVehicleDialog(vehicle: Vehicle, position: Int) {
+
+        val dialog = BottomSheetDialog(requireContext())
+        val view = layoutInflater.inflate(R.layout.layout_add_vehicle_bottom_sheet, null)
+
+        val etBrand = view.findViewById<EditText>(R.id.etBrand)
+        val etModel = view.findViewById<EditText>(R.id.etModel)
+        val etPlate = view.findViewById<EditText>(R.id.etPlate)
+        val etType = view.findViewById<EditText>(R.id.etType)
+        val btnConfirm = view.findViewById<MaterialButton>(R.id.btnConfirm)
+        val btnCancel = view.findViewById<MaterialButton>(R.id.btnCancel)
+
+        // CARGAR DATOS EXISTENTES
+        etBrand.setText(vehicle.brand)
+        etModel.setText(vehicle.name)
+        etPlate.setText(vehicle.plate)
+        etType.setText(vehicle.type)
+
+        btnConfirm.setOnClickListener {
+
+            val brand = etBrand.text.toString()
+            val model = etModel.text.toString()
+            val plate = etPlate.text.toString()
+            val type = etType.text.toString()
+
+            if (brand.isNotEmpty() && model.isNotEmpty() && plate.isNotEmpty() && type.isNotEmpty()) {
+
+                val updatedVehicle = Vehicle(model, brand, plate, type)
+
+                adapter.updateVehicle(position, updatedVehicle)
+
+                dialog.dismiss()
+            }
+        }
+
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.setContentView(view)
+        dialog.show()
+    }
+
+
 }
+
+
