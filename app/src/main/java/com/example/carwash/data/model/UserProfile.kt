@@ -9,3 +9,19 @@ data class UserProfile(
     val direccion: String = "",
     val createdAt: Long = System.currentTimeMillis()
 )
+
+data class Reserva(
+    val id: Int,
+    val servicio: String,
+    val direccion: String,
+    val fecha: String,
+    val hora: String,
+    val pago: String,
+    var estado: EstadoReserva
+)
+
+enum class EstadoReserva {
+    PROGRAMADO,
+    FINALIZADO,
+    CANCELADO
+}

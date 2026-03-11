@@ -7,4 +7,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="azulcarwash">#2600FC</color>
+    <color name="edit_text_bg_gray">#F0F0F0</color>
+    <color name="red">#E53935</color>
 </resources>
