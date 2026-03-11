@@ -39,4 +39,5 @@ class BookingFragment : Fragment(R.layout.fragment_bookings) {
 
         adapter.updateList(onlyPending)
     }
+
 }

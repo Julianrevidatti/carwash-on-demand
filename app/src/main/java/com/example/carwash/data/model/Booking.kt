@@ -6,5 +6,9 @@ data class Booking(
     val date: String,
     val time: String,
     val service: String,
-    var status: BookingStatus
+    var status: BookingStatus,
+    val vehicle: String = "No especificado",
+    val paymentMethod: String = "Efectivo"
 )
+
+

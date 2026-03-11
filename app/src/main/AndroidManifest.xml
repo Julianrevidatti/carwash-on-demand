@@ -13,20 +13,17 @@
         <activity
             android:name=".MainActivity"
             android:exported="true">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
 
-        <!-- 🔹 LOGIN -->
+        <!-- LoginActivity queda como una actividad común, sin el intent-filter -->
         <activity
             android:name=".ui.auth.LoginActivity"
             android:exported="false" />
 
-        <!-- 🔹 REGISTER -->
         <activity
             android:name=".ui.auth.RegisterActivity"
             android:exported="false" />

@@ -1,141 +1,108 @@
 package com.example.carwash.ui.vehicles
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.widget.EditText
+import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
+import android.widget.EditText
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.carwash.R
-import com.example.carwash.databinding.FragmentVehiclesBinding
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.button.MaterialButton
 
-class VehiclesFragment : Fragment() {
+// Modelo de datos para el vehículo
+data class MyVehicle(val name: String)
 
-    private var _binding: FragmentVehiclesBinding? = null
-    private val binding get() = _binding!!
-    private lateinit var adapter: VehiclesAdapter
-    private val vehicleList = mutableListOf<Vehicle>()
+class VehiclesFragment : Fragment(R.layout.fragment_vehicles) {
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        _binding = FragmentVehiclesBinding.inflate(inflater, container, false)
-        return binding.root
-    }
+    private var vehicleList = mutableListOf<MyVehicle>()
+
+    // Declaramos las vistas como variables de clase para que updateUI las encuentre
+    private lateinit var btnAdd: Button
+    private lateinit var tvCount: TextView
+    private lateinit var emptyState: View
+    private lateinit var recyclerView: RecyclerView
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
-        setupRecyclerView()
 
-        binding.btnBack.setOnClickListener {
-            requireActivity().onBackPressedDispatcher.onBackPressed()
+        // Inicializamos las vistas del layout principal
+        btnAdd = view.findViewById(R.id.btnAddVehicle)
+        tvCount = view.findViewById(R.id.tvVehicleCount)
+        emptyState = view.findViewById(R.id.emptyStateVehicles)
+        recyclerView = view.findViewById(R.id.rvVehicles)
+
+        recyclerView.layoutManager = LinearLayoutManager(context)
+
+        // BOTÓN AGREGAR: Ahora llama al diálogo real
+        btnAdd.setOnClickListener {
+            if (vehicleList.size < 3) {
+                showAddVehicleDialog() // <--- LLAMA A LA FUNCIÓN DEL FORMULARIO
+            } else {
+                Toast.makeText(requireContext(), "Límite de 3 alcanzado", Toast.LENGTH_SHORT).show()
+            }
         }
 
-        binding.fabAddVehicle.setOnClickListener {
-            showAddVehicleDialog()
-        }
+        updateUI()
     }
 
-    private fun setupRecyclerView() {
+    // Función para actualizar la pantalla principal
+    private fun updateUI() {
+        tvCount.text = "${vehicleList.size}/3 vehículos guardados"
+
         if (vehicleList.isEmpty()) {
-            vehicleList.add(Vehicle("Gol Power", "Volkswagen", "ABC123", "Sedan"))
+            emptyState.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+        } else {
+            emptyState.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
         }
 
-        adapter = VehiclesAdapter(vehicleList) { vehicle, position ->
-            showEditVehicleDialog(vehicle, position)
-        }
-        binding.rvVehicles.apply {
-            layoutManager = LinearLayoutManager(context)
-            this.adapter = this@VehiclesFragment.adapter
+        if (vehicleList.size >= 3) {
+            btnAdd.isEnabled = false
+            btnAdd.alpha = 0.5f
+            btnAdd.text = "Límite alcanzado"
+        } else {
+            btnAdd.isEnabled = true
+            btnAdd.alpha = 1.0f
+            btnAdd.text = "Agregar Vehículo"
         }
     }
 
+    // FUNCIÓN QUE ABRE EL FORMULARIO DESPLEGABLE
     private fun showAddVehicleDialog() {
         val dialog = BottomSheetDialog(requireContext())
+        // Inflamos el XML del formulario que creamos antes
         val view = layoutInflater.inflate(R.layout.layout_add_vehicle_bottom_sheet, null)
-        
-        val tvTitle = view.findViewById<TextView>(R.id.tvSheetTitle)
+
         val etBrand = view.findViewById<EditText>(R.id.etBrand)
         val etModel = view.findViewById<EditText>(R.id.etModel)
         val etPlate = view.findViewById<EditText>(R.id.etPlate)
         val etType = view.findViewById<EditText>(R.id.etType)
-        val btnConfirm = view.findViewById<MaterialButton>(R.id.btnConfirm)
-        val btnCancel = view.findViewById<MaterialButton>(R.id.btnCancel)
-
-        tvTitle.text = "Agregar Vehículo"
+        val btnConfirm = view.findViewById<Button>(R.id.btnConfirm)
 
         btnConfirm.setOnClickListener {
-            val brand = etBrand.text.toString()
-            val model = etModel.text.toString()
-            val plate = etPlate.text.toString()
-            val type = etType.text.toString()
+            val brand = etBrand.text.toString().trim()
+            val model = etModel.text.toString().trim()
+            val plate = etPlate.text.toString().trim()
+            val type = etType.text.toString().trim()
 
             if (brand.isNotEmpty() && model.isNotEmpty() && plate.isNotEmpty() && type.isNotEmpty()) {
-                val newVehicle = Vehicle(model, brand, plate, type)
-                adapter.addVehicle(newVehicle)
-                dialog.dismiss()
-            }
-        }
+                // Creamos el vehículo y lo agregamos a la lista
+                val newVehicle = MyVehicle("$brand $model ($plate) $type")
+                vehicleList.add(newVehicle)
 
-        btnCancel.setOnClickListener {
-            dialog.dismiss()
+                updateUI() // Refrescamos la pantalla de atrás
+                dialog.dismiss() // Cerramos el formulario
+                Toast.makeText(requireContext(), "Vehículo guardado", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(requireContext(), "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show()
+            }
         }
 
         dialog.setContentView(view)
         dialog.show()
-    }
-
-    private fun showEditVehicleDialog(vehicle: Vehicle, position: Int) {
-        val dialog = BottomSheetDialog(requireContext())
-        val view = layoutInflater.inflate(R.layout.layout_add_vehicle_bottom_sheet, null)
-
-        val tvTitle = view.findViewById<TextView>(R.id.tvSheetTitle)
-        val etBrand = view.findViewById<EditText>(R.id.etBrand)
-        val etModel = view.findViewById<EditText>(R.id.etModel)
-        val etPlate = view.findViewById<EditText>(R.id.etPlate)
-        val etType = view.findViewById<EditText>(R.id.etType)
-        val btnConfirm = view.findViewById<MaterialButton>(R.id.btnConfirm)
-        val btnCancel = view.findViewById<MaterialButton>(R.id.btnCancel)
-
-        // CAMBIAR TÍTULO PARA EDICIÓN
-        tvTitle.text = "Editar Vehículo"
-        
-        // CARGAR DATOS EXISTENTES
-        etBrand.setText(vehicle.brand)
-        etModel.setText(vehicle.name)
-        etPlate.setText(vehicle.plate)
-        etType.setText(vehicle.type)
-
-        btnConfirm.setOnClickListener {
-            val brand = etBrand.text.toString()
-            val model = etModel.text.toString()
-            val plate = etPlate.text.toString()
-            val type = etType.text.toString()
-
-            if (brand.isNotEmpty() && model.isNotEmpty() && plate.isNotEmpty() && type.isNotEmpty()) {
-                val updatedVehicle = Vehicle(model, brand, plate, type)
-                adapter.updateVehicle(position, updatedVehicle)
-                dialog.dismiss()
-            }
-        }
-
-        btnCancel.setOnClickListener {
-            dialog.dismiss()
-        }
-
-        dialog.setContentView(view)
-        dialog.show()
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 }
