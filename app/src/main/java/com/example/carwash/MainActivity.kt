@@ -1,12 +1,10 @@
 package com.example.carwash
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.example.carwash.databinding.ActivityMainBinding
-import com.example.carwash.ui.auth.LoginActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -15,13 +13,15 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // COMENTADO PARA TRABAJAR SIN LOGIN
+        /*
         val fromLogin = intent.getBooleanExtra("FROM_LOGIN", false)
-
         if (!fromLogin) {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
             return
         }
+        */
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)

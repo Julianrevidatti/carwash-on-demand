@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.carwash.R
@@ -17,6 +18,7 @@ class BookingAdapter(
     private var bookings: List<Booking> = emptyList()
 
     inner class BookingViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val serviceImage: ImageView = view.findViewById(R.id.serviceImage)
         val serviceName: TextView = view.findViewById(R.id.serviceName)
         val date: TextView = view.findViewById(R.id.date)
         val hour: TextView = view.findViewById(R.id.hour)
@@ -38,11 +40,24 @@ class BookingAdapter(
 
         val booking = bookings[position]
 
-        holder.serviceName.text = booking.service
+        // Configurar el nombre como "LAVADO X"
+        val displayName = booking.service.uppercase().replace("LAVADO ", "").replace("SERVICIO ", "")
+        holder.serviceName.text = "LAVADO $displayName"
+        
         holder.date.text = "Fecha: ${booking.date}"
         holder.hour.text = "Hora: 10:30 - 11:30"
         holder.address.text = "Direccion: Guareschi 45, Tigre"
         holder.payment.text = "Pago: Mercado Pago"
+
+        // Asignar imagen según el servicio
+        val imageRes = when {
+            booking.service.contains("Base", ignoreCase = true) -> R.drawable.lavadobase
+            booking.service.contains("Premium", ignoreCase = true) -> R.drawable.lavadopremium
+            booking.service.contains("Express", ignoreCase = true) -> R.drawable.lavadoexpress
+            booking.service.contains("Detailing", ignoreCase = true) -> R.drawable.lavadodetailing
+            else -> R.drawable.lavadobase
+        }
+        holder.serviceImage.setImageResource(imageRes)
 
         when (booking.status) {
             BookingStatus.PENDING -> {

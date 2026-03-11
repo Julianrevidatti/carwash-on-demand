@@ -130,7 +130,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="¿Ya tenés cuenta? Iniciar sesión"
+            android:text="¿Ya tenés cuenta? Inicia sesión"
             android:textAlignment="center"/>
 
     </LinearLayout>

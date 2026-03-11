@@ -9,9 +9,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CarWash">
 
-        <!-- 🔹 LOGIN ES EL LAUNCHER -->
+        <!-- 🔹 MAIN (HOME + NAVIGATION) AHORA ES EL LAUNCHER -->
         <activity
-            android:name=".ui.auth.LoginActivity"
+            android:name=".MainActivity"
             android:exported="true">
 
             <intent-filter>
@@ -21,14 +21,14 @@
 
         </activity>
 
+        <!-- 🔹 LOGIN -->
+        <activity
+            android:name=".ui.auth.LoginActivity"
+            android:exported="false" />
+
         <!-- 🔹 REGISTER -->
         <activity
             android:name=".ui.auth.RegisterActivity"
-            android:exported="false" />
-
-        <!-- 🔹 MAIN (HOME + NAVIGATION DE TU COMPAÑERO) -->
-        <activity
-            android:name=".MainActivity"
             android:exported="false" />
 
     </application>

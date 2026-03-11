@@ -5,31 +5,29 @@ import com.example.carwash.data.model.BookingStatus
 
 object BookingRepository {
 
-    private val bookings = mutableListOf(
-        Booking(
-            id = 1,
-            address = "Av. Libertador 123",
-            date = "Mar 10",
-            time = "10:00",
-            service = "Exterior Wash",
-            status = BookingStatus.PENDING
-        ),
-        Booking(
-            id = 2,
-            address = "San Martin 456",
-            date = "Mar 12",
-            time = "15:30",
-            service = "Full Detail",
-            status = BookingStatus.PENDING
-        )
-    )
+    private val bookings = mutableListOf<Booking>()
 
     fun getBookings(): List<Booking> {
         return bookings
     }
 
+    fun addBooking(service: String) {
+        val newId = if (bookings.isEmpty()) 1 else bookings.maxOf { it.id } + 1
+        bookings.add(
+            Booking(
+                id = newId,
+                address = "Ubicación actual",
+                date = "Hoy",
+                time = "Ahora",
+                service = service,
+                status = BookingStatus.PENDING
+            )
+        )
+    }
+
     fun cancelBooking(id: Int) {
-        bookings.find { it.id == id }?.status = BookingStatus.CANCELED
+        // En lugar de cambiar el estado, lo removemos de la lista para limpiar la vista
+        bookings.removeAll { it.id == id }
     }
 
     fun completeBooking(id: Int) {

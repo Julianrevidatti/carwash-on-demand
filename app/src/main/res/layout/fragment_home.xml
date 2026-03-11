@@ -154,6 +154,17 @@
                                 android:textSize="15sp"
                                 android:textStyle="bold" />
 
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnOrderBase"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="PEDIR LAVADO"
+                                android:textSize="10sp"
+                                android:textAllCaps="false"
+                                android:backgroundTint="@color/azulcarwash"
+                                app:cornerRadius="24dp" />
+
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -207,6 +218,17 @@
                                 android:textColor="@android:color/black"
                                 android:textSize="15sp"
                                 android:textStyle="bold" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnOrderPremium"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="PEDIR LAVADO"
+                                android:textSize="10sp"
+                                android:textAllCaps="false"
+                                android:backgroundTint="@color/azulcarwash"
+                                app:cornerRadius="24dp" />
 
                         </LinearLayout>
                     </LinearLayout>
@@ -262,6 +284,17 @@
                                 android:textSize="15sp"
                                 android:textStyle="bold" />
 
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnOrderExpress"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="PEDIR LAVADO"
+                                android:textSize="10sp"
+                                android:textAllCaps="false"
+                                android:backgroundTint="@color/azulcarwash"
+                                app:cornerRadius="24dp" />
+
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -315,6 +348,17 @@
                                 android:textColor="@android:color/black"
                                 android:textSize="15sp"
                                 android:textStyle="bold" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnOrderDetailing"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="PEDIR LAVADO"
+                                android:textSize="10sp"
+                                android:textAllCaps="false"
+                                android:backgroundTint="@color/azulcarwash"
+                                app:cornerRadius="24dp" />
 
                         </LinearLayout>
                     </LinearLayout>
