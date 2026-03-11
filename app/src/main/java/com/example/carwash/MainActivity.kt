@@ -7,7 +7,6 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.example.carwash.databinding.ActivityMainBinding
 import com.example.carwash.ui.auth.LoginActivity
-import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : AppCompatActivity() {
 
@@ -16,15 +15,14 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 🔐 Si NO hay usuario → Login
-        val user = FirebaseAuth.getInstance().currentUser
-        if (user == null) {
+        val fromLogin = intent.getBooleanExtra("FROM_LOGIN", false)
+
+        if (!fromLogin) {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
             return
         }
 
-        // 👇 Usuario logueado → Home normal
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 

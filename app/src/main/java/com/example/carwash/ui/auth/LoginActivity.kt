@@ -12,24 +12,14 @@ class LoginActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
 
-    override fun onStart() {
-        super.onStart()
-
-        val currentUser = auth.currentUser
-        if (currentUser != null) {
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
         auth = FirebaseAuth.getInstance()
 
-        val etEmail = findViewById<EditText>(R.id.etEmail)
-        val etPassword = findViewById<EditText>(R.id.etPassword)
+        val etEmail = findViewById<EditText>(R.id.etEmailLogin)
+        val etPassword = findViewById<EditText>(R.id.etPasswordLogin)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
         val tvGoRegister = findViewById<TextView>(R.id.tvGoRegister)
 
@@ -44,8 +34,10 @@ class LoginActivity : AppCompatActivity() {
 
             auth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener {
-                    startActivity(Intent(this, MainActivity::class.java))
-                    finish() // ← mata login
+                    val intent = Intent(this, MainActivity::class.java)
+                    intent.putExtra("FROM_LOGIN", true)
+                    startActivity(intent)
+                    finish()
                 }
                 .addOnFailureListener {
                     Toast.makeText(this, "Credenciales incorrectas", Toast.LENGTH_LONG).show()
