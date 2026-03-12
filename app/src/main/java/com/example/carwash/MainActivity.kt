@@ -1,12 +1,14 @@
 package com.example.carwash
 
-import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.example.carwash.databinding.ActivityMainBinding
-import com.example.carwash.ui.auth.LoginActivity
+import com.example.carwash.utils.FirebaseSeed
+import com.google.firebase.firestore.FirebaseFirestore
+import com.example.carwash.utils.FirebaseSeedUsuarios
 
 class MainActivity : AppCompatActivity() {
 
@@ -14,14 +16,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // RESTAURADO EL LOGIN
-        /*val fromLogin = intent.getBooleanExtra("FROM_LOGIN", false)
-        if (!fromLogin) {
-            startActivity(Intent(this, LoginActivity::class.java))
-            finish()
-            return
-        }*/
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -33,5 +27,16 @@ class MainActivity : AppCompatActivity() {
 
         val navController = navHostFragment.navController
         binding.navView.setupWithNavController(navController)
+
+        // Test Firebase — al final, después del setContentView
+        FirebaseFirestore.getInstance()
+            .collection("test").document("ping")
+            .set(mapOf("ok" to true))
+            .addOnSuccessListener { Log.d("TEST", "Conexion OK") }
+            .addOnFailureListener { e -> Log.e("TEST", "Fallo: $e") }
+
+        // Cargar datos de prueba — solo primera vez, después comentar
+        //FirebaseSeed.cargarTodo()
+        //FirebaseSeedUsuarios.cargarTodo()
     }
 }
