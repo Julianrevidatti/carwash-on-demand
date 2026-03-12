@@ -3,117 +3,108 @@ package com.example.carwash.data.model
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
 
-// ── Usuario ───────────────────────────────────────────────
-data class Usuario(
-    val nombre: String = "",
-    val apellido: String = "",
+data class User(
+    val name: String = "",
+    val lastName: String = "",
     val dni: String = "",
     val email: String = "",
-    val telefono: String = "",
-    val direccion_base: String = "",
-    val creado_en: Timestamp = Timestamp.now()
+    val phone: String = "",
+    val baseAddress: String = "",
+    val createdAt: Timestamp = Timestamp.now()
 )
 
-// ── Vehículo (subcolección de usuario) ───────────────────
-data class Vehiculo(
-    val marca: String = "",
-    val modelo: String = "",
-    val tipo: String = "",
-    val patente: String = "",
-    val creado_en: Timestamp = Timestamp.now()
+data class Vehicle(
+    val brand: String = "",
+    val model: String = "",
+    val type: String = "",
+    val licensePlate: String = "",
+    val createdAt: Timestamp = Timestamp.now()
 )
 
-// ── Lavador ───────────────────────────────────────────────
-data class Lavador(
-    val nombre: String = "",
-    val apellido: String = "",
-    val telefono: String = "",
-    val zona_cobertura: String = "",
-    val ubicacion: GeoPoint = GeoPoint(0.0, 0.0),
-    val estado_disponibilidad: String = "DISPONIBLE",
-    val reputacion_promedio: Double = 5.0,
-    val total_resenas: Long = 0,
-    val suma_puntajes: Double = 0.0,
-    val creado_en: Timestamp = Timestamp.now()
+data class Washer(
+    val name: String = "",
+    val lastName: String = "",
+    val phone: String = "",
+    val coverageZone: String = "",
+    val location: GeoPoint = GeoPoint(0.0, 0.0),
+    val availabilityStatus: String = "AVAILABLE",
+    val averageRating: Double = 5.0,
+    val totalReviews: Long = 0,
+    val totalScore: Double = 0.0,
+    val createdAt: Timestamp = Timestamp.now()
 )
 
-// ── Servicio (catálogo) ───────────────────────────────────
-data class Servicio(
-    val nombre: String = "",
-    val descripcion: String = "",
-    val precio_base: Double = 0.0,
-    val duracion_estimada: Int = 0,
-    val tipo_vehiculo: String = "todos",
-    val estado: String = "activo"
+data class Service(
+    val name: String = "",
+    val description: String = "",
+    val basePrice: Double = 0.0,
+    val estimatedDuration: Int = 0,
+    val vehicleType: String = "all",
+    val status: String = "active"
 )
 
-// ── Snapshots (embebidos en Solicitud) ────────────────────
-data class UsuarioSnapshot(
-    val nombre: String = "",
-    val apellido: String = "",
-    val telefono: String = ""
+data class UserSnapshot(
+    val name: String = "",
+    val lastName: String = "",
+    val phone: String = ""
 )
 
-data class VehiculoSnapshot(
-    val marca: String = "",
-    val modelo: String = "",
-    val patente: String = "",
-    val tipo: String = ""
+data class VehicleSnapshot(
+    val brand: String = "",
+    val model: String = "",
+    val licensePlate: String = "",
+    val type: String = ""
 )
 
-data class ServicioSnapshot(
-    val id_servicio: String = "",
-    val nombre: String = "",
-    val precio_base: Double = 0.0
+data class ServiceSnapshot(
+    val serviceId: String = "",
+    val name: String = "",
+    val basePrice: Double = 0.0
 )
 
-data class LavadorSnapshot(
-    val nombre: String = "",
-    val apellido: String = "",
-    val telefono: String = ""
+data class WasherSnapshot(
+    val name: String = "",
+    val lastName: String = "",
+    val phone: String = ""
 )
 
-// ── Solicitud ─────────────────────────────────────────────
-data class Solicitud(
-    val id_usuario: String = "",
-    val id_lavador: String = "",
-    val id_vehiculo: String = "",
-    val usuario_snapshot: UsuarioSnapshot = UsuarioSnapshot(),
-    val vehiculo_snapshot: VehiculoSnapshot = VehiculoSnapshot(),
-    val servicio_snapshot: ServicioSnapshot = ServicioSnapshot(),
-    val lavador_snapshot: LavadorSnapshot = LavadorSnapshot(),
-    val fecha_programada: Timestamp = Timestamp.now(),
-    val franja_horaria: String = "",
-    val ubicacion: GeoPoint = GeoPoint(0.0, 0.0),
-    val direccion_encuentro: String = "",
-    val monto_final: Double = 0.0,
-    val estado: String = "PENDIENTE",  // PENDIENTE | PROGRAMADO | EN_CURSO | FINALIZADO | CANCELADO
-    val creado_en: Timestamp = Timestamp.now()
+data class FirebaseBooking(
+    val userId: String = "",
+    val washerId: String = "",
+    val vehicleId: String = "",
+    val userSnapshot: UserSnapshot = UserSnapshot(),
+    val vehicleSnapshot: VehicleSnapshot = VehicleSnapshot(),
+    val serviceSnapshot: ServiceSnapshot = ServiceSnapshot(),
+    val washerSnapshot: WasherSnapshot = WasherSnapshot(),
+    val scheduledDate: Timestamp = Timestamp.now(),
+    val timeSlot: String = "",
+    val location: GeoPoint = GeoPoint(0.0, 0.0),
+    val meetingAddress: String = "",
+    val finalAmount: Double = 0.0,
+    val status: String = "PENDING",
+    val createdAt: Timestamp = Timestamp.now()
 )
 
-// ── Pago (subcolección de Solicitud) ─────────────────────
-data class Pago(
-    val metodo_pago: String = "",       // DIGITAL | EFECTIVO
-    val estado_pago: String = "PENDIENTE", // PENDIENTE | APROBADO | RECHAZADO
-    val comprobante_url: String = "",
-    val creado_en: Timestamp = Timestamp.now()
+data class Payment(
+    val paymentMethod: String = "",     // DIGITAL | CASH
+    val paymentStatus: String = "PENDING", // PENDING | APPROVED | REJECTED
+    val receiptUrl: String = "",
+    val createdAt: Timestamp = Timestamp.now()
 )
 
-// ── Reseña (subcolección de Solicitud) ───────────────────
-data class Resena(
-    val id_usuario: String = "",
-    val id_lavador: String = "",
-    val puntaje: Int = 0,               // 1 a 5
-    val comentario: String = "",
-    val creado_en: Timestamp = Timestamp.now()
+data class Review(
+    val userId: String = "",
+    val washerId: String = "",
+    val score: Int = 0,                 // 1 to 5
+    val comment: String = "",
+    val createdAt: Timestamp = Timestamp.now()
 )
 
-// ── Turno ─────────────────────────────────────────────────
-data class Turno(
-    val id_solicitud: String = "",
-    val id_lavador: String = "",
-    val fecha: Timestamp = Timestamp.now(),
-    val hora: String = "",
-    val ubicacion: GeoPoint = GeoPoint(0.0, 0.0),
-    val estado_turno: String = "CONFIRMADO"  // CONFIRMADO | CANCELADO | COMPLETADO
+data class FirebaseAppointment(
+    val bookingId: String = "",
+    val washerId: String = "",
+    val date: Timestamp = Timestamp.now(),
+    val time: String = "",
+    val location: GeoPoint = GeoPoint(0.0, 0.0),
+    val appointmentStatus: String = "CONFIRMED"
 )

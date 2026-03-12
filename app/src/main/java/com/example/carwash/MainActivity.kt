@@ -7,8 +7,8 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.example.carwash.databinding.ActivityMainBinding
 import com.example.carwash.utils.FirebaseSeed
+import com.example.carwash.utils.FirebaseSeedUsers    // ← antes FirebaseSeedUsuarios
 import com.google.firebase.firestore.FirebaseFirestore
-import com.example.carwash.utils.FirebaseSeedUsuarios
 
 class MainActivity : AppCompatActivity() {
 
@@ -28,15 +28,15 @@ class MainActivity : AppCompatActivity() {
         val navController = navHostFragment.navController
         binding.navView.setupWithNavController(navController)
 
-        // Test Firebase — al final, después del setContentView
+        // Test conexión
         FirebaseFirestore.getInstance()
             .collection("test").document("ping")
             .set(mapOf("ok" to true))
             .addOnSuccessListener { Log.d("TEST", "Conexion OK") }
             .addOnFailureListener { e -> Log.e("TEST", "Fallo: $e") }
 
-        // Cargar datos de prueba — solo primera vez, después comentar
-        //FirebaseSeed.cargarTodo()
-        //FirebaseSeedUsuarios.cargarTodo()
+        // Cargar datos — comentar después de la primera corrida
+        FirebaseSeed.loadAll()           // ← antes cargarTodo()
+        FirebaseSeedUsers.loadAll()      // ← antes FirebaseSeedUsuarios.cargarTodo()
     }
 }
