@@ -8,7 +8,8 @@ data class Booking(
     val service: String,
     var status: BookingStatus,
     val vehicle: String = "No especificado",
-    val paymentMethod: String = "Efectivo"
+    val paymentMethod: String = "Efectivo",
+    val durationMinutes: Int = 0,
+    val startTimestamp: Long = 0L,
+    val endTimestamp: Long = 0L
 )
-
-
