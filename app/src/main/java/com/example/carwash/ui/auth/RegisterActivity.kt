@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.carwash.MainActivity
 import com.example.carwash.R
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class RegisterActivity : AppCompatActivity() {
 
@@ -51,12 +52,29 @@ class RegisterActivity : AppCompatActivity() {
             auth.createUserWithEmailAndPassword(email, password)
                 .addOnSuccessListener {
 
-                    Toast.makeText(this, "Registro exitoso", Toast.LENGTH_SHORT).show()
-
-                    // ir directo al home
-                    startActivity(Intent(this, MainActivity::class.java))
-
-                    finish()
+                    val db = FirebaseFirestore.getInstance()
+                    val user = auth.currentUser
+                    if (user != null) {
+                        val userMap = hashMapOf(
+                            "name" to "$nombre $apellido",
+                            "address" to direccion,
+                            "phone" to telefono,
+                            "email" to email
+                        )
+                        db.collection("users").document(user.uid).set(userMap)
+                            .addOnSuccessListener {
+                                Toast.makeText(this@RegisterActivity, "Registro exitoso", Toast.LENGTH_SHORT).show()
+                                startActivity(Intent(this@RegisterActivity, MainActivity::class.java))
+                                finish()
+                            }
+                            .addOnFailureListener { e ->
+                                Toast.makeText(this@RegisterActivity, "Error al guardar datos: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                    } else {
+                        Toast.makeText(this@RegisterActivity, "Registro exitoso", Toast.LENGTH_SHORT).show()
+                        startActivity(Intent(this@RegisterActivity, MainActivity::class.java))
+                        finish()
+                    }
                 }
                 .addOnFailureListener {
                     Toast.makeText(

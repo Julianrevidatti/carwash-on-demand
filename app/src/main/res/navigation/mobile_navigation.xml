@@ -29,8 +29,20 @@
         tools:layout="@layout/fragment_bookings"/>
 
     <fragment
-        android:id="@+id/navigation_profile"
+        android:id="@+id/navigation_vehicles"
         android:name="com.example.carwash.ui.vehicles.VehiclesFragment"
         android:label="Vehiculos"
         tools:layout="@layout/fragment_vehicles" />
+
+    <fragment
+        android:id="@+id/navigation_notifications"
+        android:name="com.example.carwash.ui.notifications.NotificationsFragment"
+        android:label="Alertas"
+        tools:layout="@layout/fragment_notifications" />
+
+    <fragment
+        android:id="@+id/navigation_profile"
+        android:name="com.example.carwash.ui.profile.ProfileFragment"
+        android:label="Perfil"
+        tools:layout="@layout/fragment_profile" />
 </navigation>
