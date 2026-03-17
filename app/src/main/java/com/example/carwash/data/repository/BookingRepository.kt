@@ -13,9 +13,12 @@ object BookingRepository {
         return bookings
     }
 
-    fun addBooking(service: String) {
+    fun addBooking(
+        service: String,
+        vehicle: String = "No especificado",
+        paymentMethod: String = "Efectivo"
+    ) {
         val newId = if (bookings.isEmpty()) 1 else bookings.maxOf { it.id } + 1
-
         val durationMinutes = WashDuration.getDurationMinutes(service)
         val startTimestamp = System.currentTimeMillis()
         val endTimestamp = startTimestamp + durationMinutes * 60 * 1000L
@@ -28,6 +31,8 @@ object BookingRepository {
                 time = "Ahora",
                 service = service,
                 status = BookingStatus.PENDING,
+                vehicle = vehicle,
+                paymentMethod = paymentMethod,
                 durationMinutes = durationMinutes,
                 startTimestamp = startTimestamp,
                 endTimestamp = endTimestamp
@@ -45,13 +50,10 @@ object BookingRepository {
 
     private fun updateCompletedBookings() {
         val currentTime = System.currentTimeMillis()
-
         bookings.forEach { booking ->
-            if (
-                booking.status == BookingStatus.PENDING &&
+            if (booking.status == BookingStatus.PENDING &&
                 booking.endTimestamp > 0 &&
-                currentTime >= booking.endTimestamp
-            ) {
+                currentTime >= booking.endTimestamp) {
                 booking.status = BookingStatus.COMPLETED
             }
         }

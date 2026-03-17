@@ -37,19 +37,17 @@ class BookingAdapter(
     override fun getItemCount() = bookings.size
 
     override fun onBindViewHolder(holder: BookingViewHolder, position: Int) {
-
         val booking = bookings[position]
 
-        // Configurar el nombre como "LAVADO X"
-        val displayName = booking.service.uppercase().replace("LAVADO ", "").replace("SERVICIO ", "")
+        val displayName = booking.service.uppercase()
+            .replace("LAVADO ", "").replace("SERVICIO ", "")
         holder.serviceName.text = "LAVADO $displayName"
-        
-        holder.date.text = "Fecha: ${booking.date}"
-        holder.hour.text = "Hora: 10:30 - 11:30"
-        holder.address.text = "Direccion: Guareschi 45, Tigre"
-        holder.payment.text = "Pago: Mercado Pago"
 
-        // Asignar imagen según el servicio
+        holder.date.text = "Fecha: ${booking.date}"
+        holder.hour.text = "Hora: ${booking.time}"
+        holder.address.text = "Vehículo: ${booking.vehicle}"   // usamos este campo para el vehículo
+        holder.payment.text = "Pago: ${booking.paymentMethod}"
+
         val imageRes = when {
             booking.service.contains("Base", ignoreCase = true) -> R.drawable.lavadobase
             booking.service.contains("Premium", ignoreCase = true) -> R.drawable.lavadopremium
@@ -65,13 +63,11 @@ class BookingAdapter(
                 holder.status.setTextColor(android.graphics.Color.parseColor("#2D5BFF"))
                 holder.cancelBtn.visibility = View.VISIBLE
             }
-
             BookingStatus.COMPLETED -> {
                 holder.status.text = "Estado: Finalizado"
                 holder.status.setTextColor(android.graphics.Color.parseColor("#34C759"))
                 holder.cancelBtn.visibility = View.GONE
             }
-
             BookingStatus.CANCELED -> {
                 holder.status.text = "Estado: Cancelado"
                 holder.status.setTextColor(android.graphics.Color.parseColor("#FF3B30"))
@@ -79,9 +75,7 @@ class BookingAdapter(
             }
         }
 
-        holder.cancelBtn.setOnClickListener {
-            onCancelClick(booking)
-        }
+        holder.cancelBtn.setOnClickListener { onCancelClick(booking) }
     }
 
     fun updateList(newList: List<Booking>) {

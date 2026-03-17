@@ -36,24 +36,6 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Horario del lavado"
-        android:textColor="@color/black"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp"/>
-
-    <EditText
-        android:id="@+id/etTime"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:hint="Ej: 14:30 hs"
-        android:background="@drawable/edit_text_background"
-        android:paddingHorizontal="16dp"
-        android:layout_marginBottom="16dp"
-        android:inputType="time"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:text="Medio de pago"
         android:textColor="@color/black"
         android:textStyle="bold"
@@ -108,6 +90,7 @@
             android:layout_marginStart="8dp"
             android:text="Confirmar"
             android:textAllCaps="false"
+            android:textColor="@color/white"
             android:backgroundTint="@color/azulcarwash"
             app:cornerRadius="24dp" />
 

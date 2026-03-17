@@ -6,13 +6,31 @@
     android:orientation="vertical"
     android:padding="24dp">
 
+    <!-- LOGO CENTRADO -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingTop="8dp"
+        android:paddingBottom="12dp">
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/logo_carwash"/>
+
+    </LinearLayout>
+
+    <!-- TÍTULO -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Mis Vehículos"
+        android:text="Mis vehículos"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:textColor="@android:color/black"/>
+        android:textColor="@android:color/black"
+        android:layout_marginTop="8dp"/>
 
     <TextView
         android:id="@+id/tvVehicleCount"
@@ -29,7 +47,6 @@
         android:layout_weight="1"
         android:layout_marginTop="24dp">
 
-        <!-- ID: emptyStateVehicles -->
         <LinearLayout
             android:id="@+id/emptyStateVehicles"
             android:layout_width="match_parent"
@@ -53,7 +70,6 @@
                 android:layout_marginTop="16dp"/>
         </LinearLayout>
 
-        <!-- ID: rvVehicles -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvVehicles"
             android:layout_width="match_parent"
@@ -62,12 +78,14 @@
 
     </FrameLayout>
 
-    <!-- ID: btnAddVehicle -->
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnAddVehicle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Agregar Vehículo"
-        android:layout_marginTop="16dp"/>
+        android:textAllCaps="false"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="@color/azulcarwash"
+        app:cornerRadius="24dp"/>
 
 </LinearLayout>

@@ -3,9 +3,7 @@ package com.example.carwash.data.repository
 import com.example.carwash.ui.vehicles.Vehicle
 
 object VehicleRepository {
-    private val vehicles = mutableListOf<Vehicle>(
-        Vehicle("Gol Power", "Volkswagen", "ABC123", "Sedan")
-    )
+    private val vehicles = mutableListOf<Vehicle>()
 
     fun getVehicles(): List<Vehicle> = vehicles
 

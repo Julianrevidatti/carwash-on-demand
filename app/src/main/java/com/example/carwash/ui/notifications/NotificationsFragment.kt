@@ -70,7 +70,7 @@ class NotificationsFragment : Fragment() {
                         }
                     } else {
                         tvWashStatus.text = "No tienes lavados en curso."
-                        tvWashDetails.text = "Puedes agendar un lavado desde Reservas."
+                        tvWashDetails.text = "Puedes agendar un lavado desde Inicio."
                     }
                 }
         }

@@ -25,19 +25,21 @@ class BookingFragment : Fragment(R.layout.fragment_bookings) {
         }
 
         recyclerView.adapter = adapter
-
-        // Ya no buscamos el TabLayout porque lo quitamos del XML para evitar errores
         updateList()
     }
 
     private fun updateList() {
-        // Solo mostramos las reservas con estado PENDING (Programado)
-        val allBookings = BookingRepository.getBookings()
-        val onlyPending = allBookings.filter {
-            it.status == BookingStatus.PENDING
-        }
+        val emptyState = view?.findViewById<View>(R.id.emptyStateBookings)
+        val pending = BookingRepository.getBookings().filter { it.status == BookingStatus.PENDING }
+        adapter.updateList(pending)
 
-        adapter.updateList(onlyPending)
+        if (pending.isEmpty()) {
+            emptyState?.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+        } else {
+            emptyState?.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
+        }
     }
 
 }

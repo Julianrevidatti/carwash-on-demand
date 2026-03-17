@@ -7,7 +7,8 @@ import com.example.carwash.databinding.ItemVehicleBinding
 
 class VehiclesAdapter(
     private val vehicles: MutableList<Vehicle>,
-    private val onEditClick: (Vehicle, Int) -> Unit
+    private val onEditClick: (Vehicle, Int) -> Unit,
+    private val onDeleteClick: (Int) -> Unit
 ) : RecyclerView.Adapter<VehiclesAdapter.VehicleViewHolder>() {
 
     class VehicleViewHolder(val binding: ItemVehicleBinding) : RecyclerView.ViewHolder(binding.root)
@@ -23,15 +24,20 @@ class VehiclesAdapter(
             tvVehicleName.text = vehicle.name
             tvVehicleBrand.text = vehicle.brand
             tvVehiclePlate.text = "Patente: ${vehicle.plate}"
-            tvVehicleType.text = "Tipo de vehiculo: ${vehicle.type}"
-            
+            tvVehicleType.text = "Tipo de vehículo: ${vehicle.type}"
+
             btnDelete.setOnClickListener {
-                vehicles.removeAt(holder.adapterPosition)
-                notifyItemRemoved(holder.adapterPosition)
+                val pos = holder.adapterPosition
+                if (pos != RecyclerView.NO_ID.toInt()) {
+                    onDeleteClick(pos)
+                }
             }
 
             btnEdit.setOnClickListener {
-                onEditClick(vehicle, holder.adapterPosition)
+                val pos = holder.adapterPosition
+                if (pos != RecyclerView.NO_ID.toInt()) {
+                    onEditClick(vehicle, pos)
+                }
             }
         }
     }
@@ -46,5 +52,10 @@ class VehiclesAdapter(
     fun updateVehicle(position: Int, vehicle: Vehicle) {
         vehicles[position] = vehicle
         notifyItemChanged(position)
+    }
+
+    fun removeVehicle(position: Int) {
+        vehicles.removeAt(position)
+        notifyItemRemoved(position)
     }
 }
