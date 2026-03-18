@@ -2,12 +2,14 @@ package com.example.carwash
 
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.example.carwash.databinding.ActivityMainBinding
 import com.example.carwash.utils.FirebaseSeed
 import com.example.carwash.utils.FirebaseSeedUsers    // ← antes FirebaseSeedUsuarios
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : AppCompatActivity() {
@@ -28,15 +30,9 @@ class MainActivity : AppCompatActivity() {
         val navController = navHostFragment.navController
         binding.navView.setupWithNavController(navController)
 
-        // Test conexión
-        FirebaseFirestore.getInstance()
-            .collection("test").document("ping")
-            .set(mapOf("ok" to true))
-            .addOnSuccessListener { Log.d("TEST", "Conexion OK") }
-            .addOnFailureListener { e -> Log.e("TEST", "Fallo: $e") }
 
-        // Cargar datos — comentar después de la primera corrida
-        FirebaseSeed.loadAll()           // ← antes cargarTodo()
-        FirebaseSeedUsers.loadAll()      // ← antes FirebaseSeedUsuarios.cargarTodo()
+        val db = FirebaseFirestore.getInstance()
+
+
     }
 }

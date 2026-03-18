@@ -24,7 +24,7 @@ class NotificationsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val root = inflater.inflate(R.layout.fragment_notifications, container, false)
-        
+
         auth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
 
@@ -34,6 +34,35 @@ class NotificationsFragment : Fragment() {
         loadWashStatus()
 
         return root
+    }
+
+    private fun saveRating(bookingId: String, rating: Float) {
+        db.collection("bookings")
+            .document(bookingId)
+            .update("rating", rating)
+            .addOnSuccessListener {
+                tvWashDetails.text = "Gracias por calificar ⭐ $rating"
+            }
+            .addOnFailureListener {
+                tvWashDetails.text = "Error al guardar calificación"
+            }
+    }
+
+    private fun showRatingDialog(bookingId: String) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_rating, null)
+
+        val ratingBar = dialogView.findViewById<android.widget.RatingBar>(R.id.ratingBar)
+
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Calificar servicio")
+            .setView(dialogView)
+            .setPositiveButton("Enviar") { _, _ ->
+                val rating = ratingBar.rating
+
+                saveRating(bookingId, rating)
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     private fun loadWashStatus() {
@@ -52,18 +81,21 @@ class NotificationsFragment : Fragment() {
                     if (snapshot != null && !snapshot.isEmpty) {
                         // Ordenamiento local simple en memoria
                         val document = snapshot.documents.sortedByDescending { it.getString("date") ?: "" }.firstOrNull()
-                        
+
                         if (document != null) {
                             val status = document.getString("status") ?: "Pendiente"
                             val service = document.getString("serviceType") ?: "Servicio"
                             val date = document.getString("date") ?: ""
-                            
+
                             tvWashStatus.text = "Estado: $status"
                             tvWashDetails.text = "$service programado para $date"
-                            
+
                             // Personalizamos el color u mensaje de acuerdo al estado
                             if (status.uppercase() == "COMPLETADO") {
                                 tvWashStatus.setTextColor(resources.getColor(android.R.color.holo_green_dark, null))
+                                tvWashStatus.setOnClickListener {
+                                    showRatingDialog(document.id)
+                                }
                             } else {
                                 tvWashStatus.setTextColor(resources.getColor(android.R.color.holo_orange_dark, null))
                             }
