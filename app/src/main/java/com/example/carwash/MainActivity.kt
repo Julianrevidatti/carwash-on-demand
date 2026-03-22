@@ -32,7 +32,5 @@ class MainActivity : AppCompatActivity() {
 
 
         val db = FirebaseFirestore.getInstance()
-
-
     }
 }

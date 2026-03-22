@@ -16,7 +16,9 @@ object BookingRepository {
     fun addBooking(
         service: String,
         vehicle: String = "No especificado",
-        paymentMethod: String = "Efectivo"
+        paymentMethod: String = "Efectivo",
+        date: String = "Hoy",
+        time: String = "Ahora"
     ) {
         val newId = if (bookings.isEmpty()) 1 else bookings.maxOf { it.id } + 1
         val durationMinutes = WashDuration.getDurationMinutes(service)
@@ -27,8 +29,8 @@ object BookingRepository {
             Booking(
                 id = newId,
                 address = "Ubicación actual",
-                date = "Hoy",
-                time = "Ahora",
+                date = date,
+                time = time,
                 service = service,
                 status = BookingStatus.PENDING,
                 vehicle = vehicle,
