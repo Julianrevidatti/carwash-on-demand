@@ -91,7 +91,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToLogin }) => {
               <button onClick={onGoToLogin} className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all hover:scale-105 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
                 Comenzar Ahora <ArrowRight className="w-5 h-5" />
               </button>
-              <button className="bg-transparent hover:bg-slate-800 text-white px-8 py-4 rounded-lg font-bold text-lg border border-slate-700 transition-all">
+              <button onClick={() => { alert("Solo tenés que crearte una cuenta y aprovechar los 7 días de prueba."); onGoToLogin(); }} className="bg-transparent hover:bg-slate-800 text-white px-8 py-4 rounded-lg font-bold text-lg border border-slate-700 transition-all">
                 Ver Demo en Vivo
               </button>
             </div>

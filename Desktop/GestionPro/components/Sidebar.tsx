@@ -52,14 +52,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onNavigate, isOpen,
   const isSessionOpen = currentSession && currentSession.status === 'OPEN';
 
   return (
-    <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 flex flex-col print:hidden`}>
+    <aside className={`fixed inset-y-0 left-0 z-50 bg-slate-900 text-white transform transition-all duration-300 ease-in-out ${isOpen ? 'translate-x-0 w-64' : '-translate-x-full w-0 lg:w-0'} lg:sticky lg:top-0 lg:h-screen flex flex-col print:hidden overflow-hidden`}>
       {/* Header */}
       <div className="p-6 border-b border-slate-800 flex justify-between items-center shrink-0">
         <div>
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">GESTIÓN NOW</h1>
           <p className="text-xs text-slate-400 mt-1">v4.0 Ultimate</p>
         </div>
-        <button onClick={onClose} className="lg:hidden text-slate-400"><X /></button>
+        <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors"><X /></button>
       </div>
 
       {/* Scrollable Navigation Area */}
@@ -78,6 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onNavigate, isOpen,
             />
 
             <NavBtn icon={<Package />} label="Inventario" active={activeTab === 'inventory'} onClick={() => onNavigate('inventory')} />
+            <NavBtn icon={<Tag />} label="Etiquetas" active={activeTab === 'price_tags'} onClick={() => onNavigate('price_tags')} />
             {usePlanPermissions().canAccessPromotions && (
               <NavBtn icon={<Percent />} label="Promociones" active={activeTab === 'promotions'} onClick={() => onNavigate('promotions')} />
             )}

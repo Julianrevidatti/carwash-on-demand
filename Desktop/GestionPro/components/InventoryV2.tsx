@@ -158,7 +158,7 @@ export const InventoryV2: React.FC<InventoryProps> = ({ products = [], batches =
     // NEW: Fetch full history when tab is opened
     useEffect(() => {
         if (activeTab === 'history') {
-            useStore.getState().fetchStockMovements(true);
+            useStore.getState().fetchStockMovements();
         }
     }, [activeTab]);
 
@@ -380,23 +380,41 @@ export const InventoryV2: React.FC<InventoryProps> = ({ products = [], batches =
     // Combine Batches (IN) and StockMovements (OUT) for History
     const safeMovements = Array.isArray(stockMovements) ? stockMovements : [];
 
-    const historyData = [
-        ...safeMovements.map(m => ({
-            id: m.id,
-            date: m.date,
-            type: m.type,
-            productId: m.productId,
-            productName: m.productName,
-            detail: m.reason || m.detail,
-            quantity: m.quantity,
-            isBulk: false, // Regular products
-            userId: m.userId
-        }))
-    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // --- UNIFIED CATALOG MAP (For History Lookup) ---
+    const catalogMap = React.useMemo(() => {
+        const map = new Map<string, { name: string, supplierId?: string, isWeighted: boolean, price?: number }>();
+        (products || []).forEach(p => {
+            map.set(p.id.toLowerCase(), { name: p.name, supplierId: p.supplierId, isWeighted: false, price: p.price });
+        });
+        (bulkProducts || []).forEach(b => {
+            map.set(b.id.toLowerCase(), { name: b.name, supplierId: b.supplierId, isWeighted: true, price: b.pricePerKg });
+        });
+        return map;
+    }, [products, bulkProducts]);
+
+    const historyData = React.useMemo(() => {
+        return [
+            ...safeMovements.map(m => {
+                const entry = catalogMap.get(m.productId.toLowerCase());
+                return {
+                    id: m.id,
+                    date: m.date,
+                    type: m.type,
+                    productId: m.productId,
+                    productName: m.productName,
+                    detail: m.reason || m.detail,
+                    quantity: m.quantity,
+                    isBulk: entry?.isWeighted || false,
+                    userId: m.userId
+                };
+            })
+        ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }, [safeMovements, catalogMap]);
 
     // Get unique users from history for filter
     const uniqueUsers = Array.from(new Set(historyData.map(item => item.userId).filter(Boolean)));
     const systemUsers = useStore(state => state.systemUsers) || [];
+
 
     // Filter History
     const filteredHistory = (historyData || []).filter(item => {
@@ -412,8 +430,8 @@ export const InventoryV2: React.FC<InventoryProps> = ({ products = [], batches =
 
         let matchesSupplier = true;
         if (historySupplierFilter) {
-            const product = products.find(p => p.id === item.productId);
-            matchesSupplier = product?.supplierId === historySupplierFilter;
+            const entry = catalogMap.get(item.productId.toLowerCase());
+            matchesSupplier = entry?.supplierId === historySupplierFilter;
         }
 
         // Filter by type (IN/OUT)
@@ -922,7 +940,15 @@ export const InventoryV2: React.FC<InventoryProps> = ({ products = [], batches =
                                         <p className="text-sm font-bold text-blue-700">
                                             ${filteredHistory.reduce((sum, item) => {
                                                 const product = products.find(p => p.id === item.productId);
-                                                return sum + (item.quantity * (product?.cost || 0));
+                                                if (product) {
+                                                    return sum + (item.quantity * (product.cost || 0));
+                                                }
+                                                const bulk = bulkProducts.find(b => b.id === item.productId);
+                                                if (bulk) {
+                                                    const costPerKg = bulk.weightPerBulk > 0 ? bulk.costPerBulk / bulk.weightPerBulk : 0;
+                                                    return sum + (item.quantity * costPerKg);
+                                                }
+                                                return sum;
                                             }, 0).toLocaleString()}
                                         </p>
                                     </div>
@@ -931,7 +957,10 @@ export const InventoryV2: React.FC<InventoryProps> = ({ products = [], batches =
                                         <p className="text-sm font-bold text-green-700">
                                             ${filteredHistory.reduce((sum, item) => {
                                                 const product = products.find(p => p.id === item.productId);
-                                                return sum + (item.quantity * (product?.price || 0));
+                                                if (product) return sum + (item.quantity * (product.price || 0));
+                                                const bulk = bulkProducts.find(b => b.id === item.productId);
+                                                if (bulk) return sum + (item.quantity * (bulk.pricePerKg || 0));
+                                                return sum;
                                             }, 0).toLocaleString()}
                                         </p>
                                     </div>
@@ -1079,8 +1108,9 @@ export const InventoryV2: React.FC<InventoryProps> = ({ products = [], batches =
                             <tbody className="divide-y divide-gray-100">
                                 {paginatedHistory.length > 0 ? (
                                     paginatedHistory.map(item => {
-                                        const product = products.find(p => p.id === item.productId);
-                                        const supplier = suppliers.find(s => s.id === product?.supplierId);
+                                        const entry = catalogMap.get(item.productId.toLowerCase());
+                                        const supplierId = entry?.supplierId;
+                                        const supplier = suppliers.find(s => s.id === supplierId);
                                         const user = systemUsers.find(u => u.id === item.userId);
                                         const isOut = item.type === 'OUT';
                                         return (
@@ -1094,7 +1124,7 @@ export const InventoryV2: React.FC<InventoryProps> = ({ products = [], batches =
                                                     </span>
                                                 </td>
                                                 <td className="p-4 font-medium text-gray-900">
-                                                    {item.productName || product?.name || 'Producto Desconocido'}
+                                                    {item.productName || entry?.name || 'Producto Desconocido'}
                                                     {item.isBulk && <span className="ml-2 text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold">GRANEL</span>}
                                                 </td>
                                                 <td className="p-4 text-gray-500 text-xs">{supplier?.name || '-'}</td>
@@ -1342,27 +1372,30 @@ export const InventoryV2: React.FC<InventoryProps> = ({ products = [], batches =
             )}
             {/* --- IMPORT CSV MODAL --- */}
             {showImportModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white p-6 rounded-xl w-full max-w-lg shadow-2xl">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-bold text-gray-800">Importar Productos (CSV)</h3>
-                            <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <h3 className="text-xl font-bold text-gray-800">Importar Productos (Avanzado)</h3>
+                            <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-gray-600 bg-white shadow-sm p-2 rounded-full">
+                                <X className="w-5 h-5" />
+                            </button>
                         </div>
-
-                        <div className="space-y-6">
-                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 text-sm text-blue-800">
-                                <p className="font-bold mb-2">Instrucciones:</p>
-                                <ul className="list-disc list-inside space-y-1">
-                                    <li>El archivo debe ser formato <strong>.csv</strong></li>
-                                    <li>Debe tener las siguientes columnas en este orden:</li>
+                        <div className="p-6 overflow-y-auto">
+                            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 text-sm text-blue-800 space-y-2">
+                                <p className="font-bold">Instrucciones de formato:</p>
+                                <ul className="list-disc pl-5 space-y-1">
+                                    <li>El archivo debe ser formato <strong>.csv</strong> separando valores por coma (,).</li>
+                                    <li>Debe tener exactamente estas columnas en este orden:</li>
                                 </ul>
-                                <div className="mt-3 bg-white p-3 rounded border border-blue-200 font-mono text-xs overflow-x-auto">
-                                    Nombre, CodigoBarras, Costo, Precio, Cantidad, Proveedor
+                                <div className="bg-white p-3 rounded-lg border border-blue-200 font-mono text-xs overflow-x-auto text-nowrap">
+                                    Barcode, Nombre, Costo, Margen(%), PrecioVenta, EsPack(true/false), ProveedorId, StockInicial
                                 </div>
-                                <p className="mt-2 text-xs text-blue-600">
-                                    * La primera fila se ignora si contiene "Nombre".<br />
-                                    * El separador debe ser coma (,).
-                                </p>
+                                <ul className="text-xs space-y-1 opacity-80 mt-2">
+                                    <li>* <strong>Nombre</strong> y <strong>PrecioVenta</strong> (o Costo y Margen) son requeridos.</li>
+                                    <li>* <strong>Barcode</strong>, <strong>EsPack</strong>, <strong>ProveedorId</strong> y <strong>StockInicial</strong> pueden quedar vacíos o en cero.</li>
+                                    <li>* Si incluyes <strong>StockInicial</strong> mayor a 0, se le creará un lote de ingreso automáticamente.</li>
+                                    <li>* La primera fila se ignora si escribes "Barcode" o "Nombre".</li>
+                                </ul>
                             </div>
 
                             <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors cursor-pointer relative">

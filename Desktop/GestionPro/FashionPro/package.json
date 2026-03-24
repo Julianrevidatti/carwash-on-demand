@@ -1,0 +1,65 @@
+{
+    "name": "fashionpro",
+    "version": "1.0.0",
+    "description": "FashionPro - Sistema de Gestión para Tiendas de Ropa",
+    "main": "dist-electron/main.js",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "npm run build:preload && vite",
+        "build": "npm run build:preload && tsc && vite build && electron-builder",
+        "build:preload": "esbuild electron/preload.ts --bundle --platform=node --target=node18 --outfile=dist-electron/preload.cjs --external:electron",
+        "build:vite": "npm run build:preload && tsc && vite build",
+        "preview": "vite preview",
+        "electron:dev": "npm run build:preload && vite",
+        "electron:build": "npm run build:preload && vite build && electron-builder --win"
+    },
+    "dependencies": {
+        "lucide-react": "0.263.1",
+        "react": "18.2.0",
+        "react-dom": "18.2.0",
+        "recharts": "2.12.0",
+        "sonner": "^2.0.7",
+        "sql.js": "^1.11.0",
+        "zustand": "^5.0.8"
+    },
+    "devDependencies": {
+        "@types/node": "^22.14.0",
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.2.0",
+        "@vitejs/plugin-react": "^5.0.0",
+        "concurrently": "^9.1.0",
+        "cross-env": "^10.1.0",
+        "electron": "^33.3.1",
+        "electron-builder": "^25.1.8",
+        "esbuild": "^0.27.3",
+        "typescript": "~5.8.2",
+        "vite": "^6.2.0",
+        "vite-plugin-electron": "^0.28.7",
+        "vite-plugin-electron-renderer": "^0.14.6",
+        "wait-on": "^8.0.3"
+    },
+    "build": {
+        "appId": "com.fashionpro.app",
+        "productName": "FashionPro",
+        "directories": {
+            "output": "release"
+        },
+        "extraResources": [
+            {
+                "from": "node_modules/sql.js/dist/sql-wasm.wasm",
+                "to": "sql-wasm.wasm"
+            }
+        ],
+        "win": {
+            "target": "nsis"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "installerLanguages": [
+                "es_ES"
+            ]
+        }
+    }
+}

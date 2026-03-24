@@ -40,7 +40,10 @@ export interface InventorySlice {
     processSaleStock: (saleId: string, items: { id: string, name: string, quantity: number }[]) => Promise<boolean>;
     // NEW: Sync local state after RPC transaction
     deductLocalStock: (items: { id: string, quantity: number, isWeighted: boolean }[]) => void;
+    stockMap: Record<string, number>;
+    calculateStockMap: () => void;
 }
+
 
 export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => ({
     products: [],
@@ -48,6 +51,25 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
     suppliers: [],
     stockMovements: [],
     bulkProducts: [],
+    stockMap: {},
+
+    calculateStockMap: () => {
+        const { batches, bulkProducts } = get();
+        const map: Record<string, number> = {};
+
+        // 1. Summarize Regular Batches
+        batches.forEach(b => {
+            map[b.productId] = (map[b.productId] || 0) + b.quantity;
+        });
+
+        // 2. Add Bulk Stock
+        bulkProducts.forEach(p => {
+            map[p.id] = p.stockKg;
+        });
+
+        set({ stockMap: map });
+    },
+
 
     // FETCH ACTIONS
     fetchProducts: async () => {
@@ -55,8 +77,11 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
         const tenantId = state.currentTenant?.id;
         if (!tenantId) return;
 
-        // 1. Fetch Regular Products
-        const { data, error } = await supabase.from('products').select('*').eq('tenant_id', tenantId);
+        // 1. Fetch Regular Products (Optimized Column Selection)
+        const { data, error } = await supabase.from('products')
+            .select('id, name, barcode, cost, profit_margin, price, supplier_id, is_pack, child_product_id, child_quantity, is_manual_price, image_url')
+            .eq('tenant_id', tenantId);
+        
         if (error) {
             console.error('Error fetching products:', error);
             toast.error('Error al cargar productos');
@@ -73,13 +98,16 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
                 childProductId: p.child_product_id,
                 childQuantity: p.child_quantity,
                 isManualPrice: p.is_manual_price || false,
-                image_url: p.image_url // MAP IMAGE URL
+                image_url: p.image_url
             }));
             set({ products: mappedProducts });
         }
 
-        // 2. Fetch Bulk Products
-        const { data: bulkData, error: bulkError } = await supabase.from('bulk_products').select('*').eq('tenant_id', tenantId);
+        // 2. Fetch Bulk Products (Optimized Column Selection)
+        const { data: bulkData, error: bulkError } = await supabase.from('bulk_products')
+            .select('id, name, barcode, supplier_id, cost_per_bulk, weight_per_bulk, price_per_kg, stock_kg')
+            .eq('tenant_id', tenantId);
+
         if (bulkError) {
             console.error('Error fetching bulk products:', bulkError);
         } else if (bulkData) {
@@ -121,8 +149,10 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
 
             const { data: chunk, error } = await supabase
                 .from('inventory_batches')
-                .select('*')
+                .select('id, product_id, batch_number, quantity, original_quantity, expiry_date, date_added')
                 .eq('tenant_id', tenantId)
+                .gt('quantity', 0)
+                .order('date_added', { ascending: false })
                 .range(start, end);
 
             if (error || !chunk || chunk.length === 0) {
@@ -131,7 +161,7 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
                 allBatches = [...allBatches, ...chunk];
                 batchPage++;
                 if (chunk.length < BATCH_CHUNK_SIZE) {
-                    hasMoreBatches = false; // Last page
+                    hasMoreBatches = false;
                 }
             }
         }
@@ -142,7 +172,7 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
                 productId: b.product_id,
                 batchNumber: b.batch_number,
                 quantity: b.quantity,
-                originalQuantity: b.original_quantity, // Load original quantity
+                originalQuantity: b.original_quantity,
                 expiryDate: b.expiry_date,
                 dateAdded: b.date_added
             }));
@@ -150,6 +180,10 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
         } else {
             set({ batches: [] });
         }
+
+        // FIX: Recalculate stock map after batches/bulk loaded
+        get().calculateStockMap();
+
 
         // Fetch Stock Movements
         get().fetchStockMovements();
@@ -160,9 +194,10 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
         const tenantId = state.currentTenant?.id;
         if (!tenantId) return;
 
-        // Manual Pagination Loop to bypass Supabase 1000-row limit
-        const MAX_RECORDS = 3000;
-        const CHUNK_SIZE = 1000;
+        // Manual Pagination Loop limited to recent records
+        const MAX_RECORDS = 1000;
+        const CHUNK_SIZE = 500;
+
         let allMovements: any[] = [];
         let hasMore = true;
         let page = 0;
@@ -295,6 +330,9 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
         set((state) => ({
             products: state.products.map((p) => (p.id === product.id ? product : p)),
         }));
+        // Update stock map if name/weighted status changed (though less common)
+        get().calculateStockMap();
+
 
         const dbProduct = {
             name: product.name,
@@ -364,10 +402,16 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
 
         // Update local state ONLY after successful DB insert
         set((state) => ({ batches: [...state.batches, batch] }));
+        get().calculateStockMap();
         toast.success('Lote guardado correctamente');
+
     },
 
-    addBatches: (newBatches) => set((state) => ({ batches: [...state.batches, ...newBatches] })),
+    addBatches: (newBatches) => {
+        set((state) => ({ batches: [...state.batches, ...newBatches] }));
+        get().calculateStockMap();
+    },
+
 
     updateBatch: async (batch) => {
         set((state) => ({
@@ -391,7 +435,11 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
         if (error) console.error('Error updating batch:', error);
     },
 
-    setBatches: (batches) => set({ batches }),
+    setBatches: (batches) => {
+        set({ batches });
+        get().calculateStockMap();
+    },
+
 
     // New action for bulk updates (e.g. after sale)
     updateBatches: async (updatedBatches) => {
@@ -692,6 +740,8 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
         set((state) => ({
             bulkProducts: state.bulkProducts.map((p) => (p.id === product.id ? product : p)),
         }));
+        get().calculateStockMap();
+
         const state = get() as any;
         const tenantId = state.currentTenant?.id;
 
@@ -725,6 +775,8 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
         set((state) => ({
             bulkProducts: (state.bulkProducts || []).filter((p) => p.id !== id),
         }));
+        get().calculateStockMap();
+
 
         const state = get() as any;
         const tenantId = state.currentTenant?.id;
@@ -784,6 +836,8 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
                         p.id === item.id ? { ...p, stockKg: newStock } : p
                     )
                 }));
+                get().calculateStockMap();
+
 
                 // 4. Register stock movement for traceability (if from sale)
                 if (item.saleId) {
@@ -918,6 +972,9 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
             return { batches: updatedBatches };
         });
 
+        get().calculateStockMap();
+
+
         // 6. Register stock movement for traceability
         const movement = {
             id: crypto.randomUUID(),
@@ -978,5 +1035,7 @@ export const createInventorySlice: StateCreator<InventorySlice> = (set, get) => 
                 bulkProducts: newBulk
             };
         });
+        get().calculateStockMap();
     }
+
 });

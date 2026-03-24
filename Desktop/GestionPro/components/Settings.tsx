@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPreference, validateToken } from '../src/services/mercadoPago';
 import { Client, PaymentMethodConfig, CashSession, CashMovement, MovementType, SystemSettings, User, UserRole } from '../types';
-import { CreditCard, User as UserIcon, Edit2, Plus, DollarSign, X, CheckCircle, Zap, ShieldCheck, Users, Lock, Trash2, Wifi, TrendingUp, CheckSquare, Square, LayoutDashboard, QrCode as QrIcon, ExternalLink, Copy, Settings as SettingsIcon, Clock, ShieldAlert } from 'lucide-react';
+import { CreditCard, User as UserIcon, Edit2, Plus, DollarSign, X, CheckCircle, Zap, ShieldCheck, Users, Lock, Trash2, Wifi, TrendingUp, CheckSquare, Square, LayoutDashboard, QrCode as QrIcon, Printer, ExternalLink, Copy, Settings as SettingsIcon, Clock, ShieldAlert, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Settings2 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useStore } from '../src/store/useStore';
 import { toast } from 'sonner';
@@ -334,6 +334,20 @@ export const Settings: React.FC<SettingsProps> = ({
         >
           <QrIcon className="w-4 h-4" />
           Mi Negocio
+        </button>
+        <button
+          onClick={() => setActiveTab('printer')}
+          className={`px-6 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all border-2 flex items-center gap-2 ${activeTab === 'printer' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200 border-blue-600 scale-105' : 'bg-white text-gray-600 border-gray-100 hover:border-blue-200 hover:text-blue-600 hover:bg-blue-50'}`}
+        >
+          <Printer className="w-4 h-4" />
+          Impresora
+        </button>
+        <button
+          onClick={() => setActiveTab('personalization')}
+          className={`px-6 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all border-2 flex items-center gap-2 ${activeTab === 'personalization' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200 border-blue-600 scale-105' : 'bg-white text-gray-600 border-gray-100 hover:border-blue-200 hover:text-blue-600 hover:bg-blue-50'}`}
+        >
+          <LayoutDashboard className="w-4 h-4" />
+          Personalización
         </button>
       </div>
 
@@ -796,6 +810,241 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
           )
         }
+
+        {activeTab === 'personalization' && (
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 animate-in fade-in">
+            <h3 className="font-bold text-gray-700 mb-6 flex items-center gap-2">
+              <LayoutDashboard className="w-5 h-5 text-blue-600" /> Diseño del POS
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Seleccione la distribución que mejor se adapte a su pantalla y forma de trabajo.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                {
+                  id: 'classic',
+                  name: 'Clásico (66/33)',
+                  desc: 'Equilibrio estándar entre lista de productos y carrito.',
+                  previewIcon: (
+                    <div className="w-full h-24 bg-gray-100 rounded-lg flex gap-1 p-2">
+                      <div className="w-2/3 h-full bg-blue-200 rounded"></div>
+                      <div className="w-1/3 h-full bg-emerald-200 rounded"></div>
+                    </div>
+                  )
+                },
+                {
+                  id: 'modern',
+                  name: 'Moderno (50/50)',
+                  desc: 'Divide la pantalla equitativamente para mejor visibilidad del carrito.',
+                  previewIcon: (
+                    <div className="w-full h-24 bg-gray-100 rounded-lg flex gap-1 p-2">
+                      <div className="w-1/2 h-full bg-blue-200 rounded"></div>
+                      <div className="w-1/2 h-full bg-emerald-200 rounded"></div>
+                    </div>
+                  )
+                },
+                {
+                  id: 'checkout-focused',
+                  name: 'Enfocado en Cobro (40/60)',
+                  desc: 'Prioriza el carrito y los detalles de la venta. Ideal para largas listas de items.',
+                  previewIcon: (
+                    <div className="w-full h-24 bg-gray-100 rounded-lg flex gap-1 p-2">
+                      <div className="w-[40%] h-full bg-blue-200 rounded"></div>
+                      <div className="w-[60%] h-full bg-emerald-200 rounded"></div>
+                    </div>
+                  )
+                },
+                {
+                  id: 'compact',
+                  name: 'Compacto / Scanner (25/75)',
+                  desc: 'Máximo espacio para el carrito. Diseñado para uso intensivo con pistola de códigos.',
+                  previewIcon: (
+                    <div className="w-full h-24 bg-gray-100 rounded-lg flex gap-1 p-2">
+                      <div className="w-[25%] h-full bg-blue-200 rounded"></div>
+                      <div className="w-[75%] h-full bg-emerald-200 rounded"></div>
+                    </div>
+                  )
+                }
+              ].map(layout => (
+                <div
+                  key={layout.id}
+                  onClick={() => onUpdateSettings({ ...settings, posLayout: layout.id as any })}
+                  className={`p-4 rounded-xl border-2 transition-all cursor-pointer hover:shadow-md ${settings.posLayout === layout.id || (!settings.posLayout && layout.id === 'classic') ? 'border-blue-600 bg-blue-50/30 shadow-blue-100 shadow-lg' : 'border-gray-100 hover:border-blue-200'}`}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h4 className="font-bold text-gray-800">{layout.name}</h4>
+                      <p className="text-xs text-gray-500 mt-1">{layout.desc}</p>
+                    </div>
+                    {(settings.posLayout === layout.id || (!settings.posLayout && layout.id === 'classic')) && (
+                      <CheckCircle className="w-5 h-5 text-blue-600" />
+                    )}
+                  </div>
+                  {layout.previewIcon}
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 pt-8 border-t border-gray-100">
+              <h3 className="font-bold text-gray-700 mb-6 flex items-center gap-2">
+                <Settings2 className="w-5 h-5 text-blue-600" /> Ajustes de Posición
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Sidebar Position Toggle */}
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-gray-800 text-sm">Posición del Carrito</p>
+                    <p className="text-xs text-gray-500">Mueve el carrito a la izquierda o derecha.</p>
+                  </div>
+                  <button
+                    onClick={() => onUpdateSettings({ ...settings, posReverseLayout: !settings.posReverseLayout })}
+                    className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold hover:bg-gray-100 transition-all flex items-center gap-2"
+                  >
+                    {settings.posReverseLayout ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    {settings.posReverseLayout ? 'Izquierda' : 'Derecha'}
+                  </button>
+                </div>
+
+                {/* Controls Position Toggle */}
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-gray-800 text-sm">Controles de Cobro</p>
+                    <p className="text-xs text-gray-500">Ubicación de totales y botón de cobrar.</p>
+                  </div>
+                  <button
+                    onClick={() => onUpdateSettings({ ...settings, posSidebarActions: settings.posSidebarActions === 'bottom' ? 'top' : 'bottom' })}
+                    className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold hover:bg-gray-100 transition-all flex items-center gap-2"
+                  >
+                    {settings.posSidebarActions === 'bottom' ? <ArrowDown className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />}
+                    {settings.posSidebarActions === 'bottom' ? 'Abajo' : 'Arriba'}
+                  </button>
+                </div>
+
+                {/* Minimalist Mode Toggle */}
+                <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 flex items-center justify-between md:col-span-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Zap className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-800 text-sm">Modo Minimalista / Enfoque en Ticket</p>
+                      <p className="text-xs text-gray-500">Oculta la lista de productos por defecto. Aparece solo al buscar por texto.</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => onUpdateSettings({ ...settings, posHideProductsByDefault: !settings.posHideProductsByDefault })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${settings.posHideProductsByDefault ? 'bg-blue-600' : 'bg-gray-200'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.posHideProductsByDefault ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'printer' && (
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 animate-in fade-in max-w-2xl">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <Printer className="w-6 h-6 text-indigo-500" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-800 text-lg">Configuración de Ticket</h3>
+                <p className="text-sm text-gray-500">Personalizá cómo y cuándo se imprimen los comprobantes de venta.</p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-lg text-sm text-indigo-800 flex gap-2">
+                <ShieldCheck className="w-5 h-5 shrink-0" />
+                <p>La impresión se realiza directamente desde el navegador al completar una venta. No se requieren drivers especiales más allá del instalado en tu sistema operativo.</p>
+              </div>
+
+              {/* Toggle AutoPrint */}
+              <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div>
+                  <label className="text-sm font-bold text-gray-800">Impresión Automática</label>
+                  <p className="text-xs text-gray-500">Imprimir automáticamente al cobrar una venta desde el Punto de Venta.</p>
+                </div>
+                <button
+                  onClick={() => onUpdateSettings({ ...settings, autoPrintTicket: !settings.autoPrintTicket })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${settings.autoPrintTicket ? 'bg-indigo-600' : 'bg-gray-200'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.autoPrintTicket ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </div>
+
+              {/* Paper Width */}
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <label className="block text-sm font-bold text-gray-800 mb-2">Ancho del Rollo de Papel</label>
+                <div className="flex gap-4">
+                  <label className="relative flex cursor-pointer items-center justify-center rounded-xl border-2 p-4 w-full transition-all hover:bg-gray-100 ${settings.ticketWidth === '58mm' || !settings.ticketWidth ? 'border-indigo-600 bg-indigo-50/50' : 'border-gray-200'}">
+                    <input
+                      type="radio"
+                      name="paperWidth"
+                      className="sr-only"
+                      checked={settings.ticketWidth === '58mm' || !settings.ticketWidth}
+                      onChange={() => onUpdateSettings({ ...settings, ticketWidth: '58mm' })}
+                    />
+                    <div className="text-center">
+                      <p className="font-bold text-gray-800">58mm</p>
+                      <p className="text-xs text-gray-500">Impresoras Comunes (Portátiles / Pequeñas)</p>
+                    </div>
+                  </label>
+                  <label className="relative flex cursor-pointer items-center justify-center rounded-xl border-2 p-4 w-full transition-all hover:bg-gray-100 ${settings.ticketWidth === '80mm' ? 'border-indigo-600 bg-indigo-50/50' : 'border-gray-200'}">
+                    <input
+                      type="radio"
+                      name="paperWidth"
+                      className="sr-only"
+                      checked={settings.ticketWidth === '80mm'}
+                      onChange={() => onUpdateSettings({ ...settings, ticketWidth: '80mm' })}
+                    />
+                    <div className="text-center">
+                      <p className="font-bold text-gray-800">80mm</p>
+                      <p className="text-xs text-gray-500">Impresoras Grandes (Epson, Códigos de barras)</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Custom Ticket Footer */}
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <label className="block text-sm font-bold text-gray-800 mb-2">Mensaje Personalizado (Pie de Ticket)</label>
+                <p className="text-xs text-gray-500 mb-3">Este mensaje aparecerá al final de todos tus tickets impresos (Ej: Políticas de cambio, agradecimientos especiales).</p>
+                <textarea
+                  className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-gray-700 resize-none"
+                  rows={3}
+                  placeholder="¡Gracias por su compra! Recuerde que los cambios se realizan dentro de los 15 días con el ticket físico."
+                  value={settings.customTicketFooter || ''}
+                  onChange={(e) => onUpdateSettings({ ...settings, customTicketFooter: e.target.value })}
+                />
+              </div>
+
+              {/* Prueba de Impresión (Preview Header mockup) */}
+              <div className="bg-white p-4 rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center">
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Vista Previa (Encabezado)</h4>
+                <div className={`bg-gray-50 p-4 rounded border border-gray-200 shadow-sm text-center ${settings.ticketWidth === '80mm' ? 'w-64' : 'w-48'}`}>
+                  <p className="font-black text-gray-800 uppercase">{businessName || 'MI NEGOCIO'}</p>
+                  <p className="text-xs text-gray-600 mt-1 whitespace-pre-wrap">{address || 'Sin dirección registrada. Agregar en pestaña Mi Negocio'}</p>
+                  <p className="text-[10px] text-gray-500 mt-2 border-t border-dashed border-gray-300 pt-2">
+                    TICKET FISCAL / CANJE<br/>
+                    Fecha: {new Date().toLocaleDateString('es-AR')}<br/>
+                  </p>
+                  {settings.customTicketFooter && (
+                    <p className="text-[10px] text-gray-600 mt-2 border-t border-dashed border-gray-300 pt-2 whitespace-pre-wrap font-medium">
+                      {settings.customTicketFooter}
+                    </p>
+                  )}
+                  <p className="text-[9px] text-gray-400 mt-2 italic">Software por GestionNow</p>
+                </div>
+              </div>
+              
+              <p className="text-xs text-gray-500 text-center">* En dispositivos Apple (iOS) puede que la impresión automática esté bloqueada por Safari. Usar el botón en el punto de venta en su lugar.</p>
+            </div>
+          </div>
+        )}
 
         {/* --- SUBSCRIPTION TAB --- */}
         {

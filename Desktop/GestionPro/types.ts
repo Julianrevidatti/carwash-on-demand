@@ -55,6 +55,10 @@ export interface SaaSClient {
 }
 
 export interface SystemSettings {
+  // Ticket Printing
+  ticketWidth?: '58mm' | '80mm';
+  customTicketFooter?: string;
+  autoPrintTicket?: boolean;
   alertStockMinDefault: number;
   alertDaysBeforeExpiration: number;
   maxClientDebt: number;
@@ -80,6 +84,10 @@ export interface SystemSettings {
     salesEvolution: boolean; // Main Chart
     categoryDistribution: boolean; // Pie Chart
   };
+  posLayout?: 'modern' | 'classic' | 'checkout-focused' | 'compact';
+  posSidebarActions?: 'top' | 'bottom';
+  posReverseLayout?: boolean;
+  posHideProductsByDefault?: boolean;
 }
 
 export interface Client {

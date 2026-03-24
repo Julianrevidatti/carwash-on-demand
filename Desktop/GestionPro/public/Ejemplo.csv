@@ -1,0 +1,4 @@
+barcode,name,cost,profitMargin,price,isPack,supplierId,stock
+7791234567890,Alfajor de Chocolate,500,50,750,false,a1b2c3d4-e5f6-7890-1234-567890abcdef,100
+7790987654321,Gaseosa Cola 1.5L,1200,40,1680,false,,50
+0000000000001,Pack x6 Cerveza,5000,30,6500,true,,20

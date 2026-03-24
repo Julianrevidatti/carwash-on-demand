@@ -29,7 +29,8 @@ export const DashboardV2: React.FC<DashboardProps> = ({ sales, products, batches
 
     // --- TRIAL STATUS CHECK ---
     const isSysAdmin = currentUser?.role === 'sysadmin';
-    const currentTenant = currentUser ? saasClients.find(c => c.id === currentUser.id) : null;
+    const { currentTenant: storeTenant } = useStore();
+    const currentTenant = storeTenant || (currentUser ? saasClients.find(c => c.userId === currentUser.id || c.id === currentUser.id) : null);
 
     // Show banner if:
     // 1. User is NOT SysAdmin
@@ -152,6 +153,18 @@ export const DashboardV2: React.FC<DashboardProps> = ({ sales, products, batches
     // Low Stock Calculation
     const lowStockCount = safeProducts.filter(p => getTotalStock(safeBatches, p.id) < 5).length;
 
+    // --- UNIFIED CATALOG MAP (For Robust Lookup) ---
+    const catalogMap = React.useMemo(() => {
+        const map = new Map<string, { name: string, supplierId?: string, isWeighted: boolean }>();
+        safeProducts.forEach(p => {
+            map.set(p.id.toLowerCase(), { name: p.name, supplierId: p.supplierId, isWeighted: false });
+        });
+        bulkProducts.forEach(b => {
+            map.set(b.id.toLowerCase(), { name: b.name, supplierId: b.supplierId, isWeighted: true });
+        });
+        return map;
+    }, [safeProducts, bulkProducts]);
+
     // --- BI METRICS ---
 
     // 1. Capital Valuation
@@ -159,20 +172,21 @@ export const DashboardV2: React.FC<DashboardProps> = ({ sales, products, batches
     let capitalRetail = 0;
 
     safeBatches.forEach(batch => {
-        const product = safeProducts.find(p => p.id === batch.productId);
-        if (product && batch.quantity > 0) {
-            capitalCost += batch.quantity * product.cost;
-            capitalRetail += batch.quantity * product.price;
+        const entry = catalogMap.get(batch.productId.toLowerCase());
+        if (entry && batch.quantity > 0) {
+            // We need to get the original cost/price from the real arrays since catalogMap is simplified
+            const product = safeProducts.find(p => p.id === batch.productId);
+            if (product) {
+                capitalCost += batch.quantity * product.cost;
+                capitalRetail += batch.quantity * product.price;
+            }
         }
     });
 
     // Add Bulk Products to Capital
     bulkProducts.forEach(bulk => {
         if (bulk.stockKg > 0) {
-            // Cost is per bulk bag (e.g. 10kg bag costs $5000 -> cost per kg = 500)
-            // But costPerBulk is the cost of the BAG. weightPerBulk is the KG of the BAG.
             const costPerKg = bulk.costPerBulk / bulk.weightPerBulk;
-
             capitalCost += bulk.stockKg * costPerKg;
             capitalRetail += bulk.stockKg * bulk.pricePerKg;
         }
@@ -187,11 +201,14 @@ export const DashboardV2: React.FC<DashboardProps> = ({ sales, products, batches
         salesList.forEach(sale => {
             if (Array.isArray(sale.items)) {
                 sale.items.forEach(item => {
-                    const product = safeProducts.find(p => p.id === item.id);
-                    // Use 'Sin Proveedor' if no supplierId, or find name if exists
+                    const itemId = item.id?.toLowerCase();
+                    const entry = catalogMap.get(itemId);
+                    
+                    let supplierIdToUse = entry?.supplierId || item.supplierId;
                     let supplierName = 'Sin Proveedor';
-                    if (product && product.supplierId) {
-                        const s = safeSuppliers.find(sup => sup.id === product.supplierId);
+
+                    if (supplierIdToUse) {
+                        const s = safeSuppliers.find(sup => sup.id === supplierIdToUse);
                         if (s) supplierName = s.name;
                     }
 
@@ -211,9 +228,10 @@ export const DashboardV2: React.FC<DashboardProps> = ({ sales, products, batches
     processSupplierSales(lastMonthSales, 'last');
 
     const supplierComparisonData = Array.from(supplierMap.entries())
+        .filter(([name]) => name !== 'Sin Proveedor')
         .map(([name, stats]) => ({ name, ...stats }))
         .sort((a, b) => b.current - a.current)
-        .slice(0, 5); // Top 5 suppliers by current month sales
+        .slice(0, 15); // Top 15 suppliers by current month sales
 
     // Keep the old global data for compatibility if needed, or just use this new one.
     // The old pie chart used 'salesBySupplierData' (global). 
@@ -430,6 +448,8 @@ export const DashboardV2: React.FC<DashboardProps> = ({ sales, products, batches
             maximumFractionDigits: 2
         }).format(amount);
     };
+
+    
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">

@@ -252,6 +252,12 @@ export const createSalesSlice: StateCreator<SalesSlice> = (set, get) => ({
             throw new Error(data.message);
         }
 
+        if (!data) {
+            toast.error('Error: El servidor no respondió a la transacción.');
+            throw new Error('No data returned from RPC');
+        }
+
+
         // ---------------------------------------------------------
         // SUCCESS: OPTIMISTIC UPDATES
         // ---------------------------------------------------------
@@ -493,12 +499,36 @@ export const createSalesSlice: StateCreator<SalesSlice> = (set, get) => ({
         // or the whole store if using the middleware. 
         // 'get()' returns the full store state.
 
-        const batches = state.batches || [];
         const bulkProducts = state.bulkProducts || [];
         const items = sale.items || [];
 
+        // FIX: Fetch fresh batches from DB to ensure accurate restoration
+        const pids = items.map((i: any) => i.id);
+        const { data: freshBatches, error: fetchError } = await supabase
+            .from('inventory_batches')
+            .select('*')
+            .in('product_id', pids)
+            .eq('tenant_id', tenantId);
+
+        if (fetchError) {
+            console.error('Error fetching batches for restoration:', fetchError);
+            toast.error('Error al sincronizar lotes antes de restaurar.');
+            return;
+        }
+
+        const batches = (freshBatches || []).map((b: any) => ({
+            id: b.id,
+            productId: b.product_id,
+            batchNumber: b.batch_number,
+            quantity: b.quantity,
+            originalQuantity: b.original_quantity,
+            expiryDate: b.expiry_date,
+            dateAdded: b.date_added
+        }));
+
         // Prepare DB updates
         // We will perform them sequentially for safety, or we could optimize.
+
 
         for (const item of items) {
             if (item.quantity <= 0) continue;

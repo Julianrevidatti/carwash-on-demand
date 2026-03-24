@@ -76,6 +76,10 @@ export const createSettingsSlice: StateCreator<SettingsSlice> = (set, get) => ({
                     maxClientDebt: settingsRes.data.max_client_debt,
                     mercadoPagoAccessToken: settingsRes.data.mercado_pago_access_token,
                     mercadoPagoUserId: settingsRes.data.mercado_pago_user_id,
+                    posLayout: settingsRes.data.pos_layout || 'classic',
+                    posSidebarActions: settingsRes.data.pos_sidebar_actions || 'top',
+                    posReverseLayout: settingsRes.data.pos_reverse_layout || false,
+                    posHideProductsByDefault: settingsRes.data.pos_hide_products_by_default || false,
                     subscriptionStatus: 'ACTIVE'
                 }
             });
@@ -125,7 +129,11 @@ export const createSettingsSlice: StateCreator<SettingsSlice> = (set, get) => ({
             alert_days_before_expiration: newSettings.alertDaysBeforeExpiration,
             max_client_debt: newSettings.maxClientDebt,
             mercado_pago_access_token: newSettings.mercadoPagoAccessToken,
-            mercado_pago_user_id: newSettings.mercadoPagoUserId
+            mercado_pago_user_id: newSettings.mercadoPagoUserId,
+            pos_layout: newSettings.posLayout,
+            pos_sidebar_actions: newSettings.posSidebarActions,
+            pos_reverse_layout: newSettings.posReverseLayout,
+            pos_hide_products_by_default: newSettings.posHideProductsByDefault
         });
         if (error) console.error('Error updating settings:', error);
     },

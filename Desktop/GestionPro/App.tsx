@@ -23,6 +23,7 @@ const SaaSAdmin = lazy(() => import('./components/SaaSAdmin').then(m => ({ defau
 const Clients = lazy(() => import('./src/components/Clients').then(m => ({ default: m.Clients })));
 const ExpensesManager = lazy(() => import('./components/ExpensesManager').then(m => ({ default: m.ExpensesManager })));
 const Tutorials = lazy(() => import('./components/Tutorials').then(m => ({ default: m.Tutorials })));
+const PriceTagsCreator = lazy(() => import('./components/PriceTagsCreator').then(m => ({ default: m.PriceTagsCreator })));
 
 import { Sidebar } from './components/Sidebar';
 import { LandingPage } from './components/LandingPage';
@@ -516,8 +517,19 @@ const MainApp: React.FC = () => {
     fetchData();
 
     // SUPABASE REALTIME SUBSCRIPTION
-    // Listen for changes in sales and sessions to provide instant sync
+    // Listen for changes in sales, sessions, and inventory to keep stock in sync
     const currentTenantId = useStore.getState().currentTenant?.id;
+
+    // Debounce for inventory changes (avoid hammering on bulk updates)
+    let inventoryRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedInventoryRefresh = () => {
+      if (inventoryRefreshTimer) clearTimeout(inventoryRefreshTimer);
+      inventoryRefreshTimer = setTimeout(() => {
+        console.log("REALTIME: Inventory changed, fetching products...");
+        useStore.getState().fetchProducts();
+      }, 5000); // 5s debounce
+    };
+
     const channel = supabase
       .channel('db-changes')
       .on(
@@ -536,7 +548,18 @@ const MainApp: React.FC = () => {
           useStore.getState().fetchSessions();
         }
       )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'inventory_batches', filter: currentTenantId ? `tenant_id=eq.${currentTenantId}` : undefined },
+        () => debouncedInventoryRefresh()
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'bulk_products', filter: currentTenantId ? `tenant_id=eq.${currentTenantId}` : undefined },
+        () => debouncedInventoryRefresh()
+      )
       .subscribe();
+
 
     // REALTIME: Tenant Changes (Locking / Plan switching)
     const tenantChannel = supabase
@@ -553,25 +576,29 @@ const MainApp: React.FC = () => {
       )
       .subscribe();
 
-    // PERIODIC REFRESH (Fallback sync)
-    // Refresh sales and sessions every 60 seconds as a backup
+    // PERIODIC REFRESH (Fallback sync every 3 minutes)
+    // Includes fetchProducts to keep inventory_batches in sync
     const refreshInterval = setInterval(async () => {
       console.log("DEBUG: Periodic refresh triggered...");
       const state = useStore.getState();
       if (state.currentTenant?.id) {
         await Promise.all([
+          state.fetchProducts(),   // ← FIX: Keeps batches in sync across devices
           state.fetchSales(),
           state.fetchSessions(),
           state.fetchCurrentTenant(state.currentTenant.id)
         ]);
       }
-    }, 60000); // 60 seconds
+    }, 180000); // 3 minutes (fetchProducts is heavier, no need for 60s)
+
 
     return () => {
+      if (inventoryRefreshTimer) clearTimeout(inventoryRefreshTimer);
       supabase.removeChannel(channel);
       supabase.removeChannel(tenantChannel);
       clearInterval(refreshInterval);
     };
+
   }, [currentUser]); // Only depend on currentUser
 
 
@@ -668,9 +695,11 @@ const MainApp: React.FC = () => {
         // Auto-lock if grace period expired
         const isGraceExpired = diffDays <= 0 && graceDaysRemaining === 0;
 
-        if (isGraceExpired && myTenant.status !== 'LOCKED') {
-          console.log('🔒 Bloqueando acceso por vencimiento de grace period:', myTenant.businessName);
-          updateTenant({ ...myTenant, status: 'LOCKED' });
+        // Auto-unlock if the database set it to LOCKED but we actually have days remaining
+        // This handles cases where a client might have been incorrectly locked or recently renewed.
+        if (diffDays > 0 && myTenant.status === 'LOCKED') {
+          console.log('🔓 Restaurando acceso automáticamente (Días restantes detectados):', myTenant.businessName);
+          updateTenant({ ...myTenant, status: 'ACTIVE' });
         }
 
         // Show warning modal on each login if in grace period
@@ -957,7 +986,18 @@ const MainApp: React.FC = () => {
     switch (activeTab) {
       case 'dashboard':
         if (!hasPermission(PERMISSIONS.DASHBOARD_VIEW)) return <AccessDenied />;
-        return <DashboardV2 sales={sales} products={products} batches={batches} clients={clients} suppliers={suppliers} onNavigate={setActiveTab} settings={settings} />;
+        return <DashboardV2 
+          sales={sales} 
+          products={products} 
+          batches={batches} 
+          clients={clients} 
+          suppliers={suppliers} 
+          onNavigate={setActiveTab} 
+          settings={settings} 
+          bulkProducts={bulkProducts}
+          currentUser={currentUser}
+          saasClients={saasClients}
+        />;
 
       case 'pos':
         if (!hasPermission(PERMISSIONS.POS_ACCESS)) return <AccessDenied />;
@@ -965,17 +1005,15 @@ const MainApp: React.FC = () => {
           return <SessionLockScreen onNavigateToCash={() => setActiveTab('cash_control')} />;
         }
         return <POS
-          products={products}
           clients={clients}
           paymentMethods={paymentMethods}
           onCompleteSale={handleNewSale}
           currentSession={currentSession}
-          batches={batches}
           promotions={promotions}
           settings={settings}
           onNavigateToCash={() => setActiveTab('cash_control')}
-          bulkProducts={bulkProducts}
         />;
+
 
       case 'products':
         if (!hasPermission(PERMISSIONS.INVENTORY_MANAGE)) return <AccessDenied />;
@@ -989,13 +1027,77 @@ const MainApp: React.FC = () => {
           onAddBatch={addBatch}
           onAddSupplier={addSupplier}
           onMassUpdate={() => { }}
-          onImportCSV={() => { }}
+          onImportCSV={async (newProducts, newBatches) => {
+            const loadingToast = toast.loading(`Importando ${newProducts.length} productos, por favor espera...`);
+            try {
+              const store = useStore.getState();
+              const tenantId = store.currentTenant?.id;
+              let count = 0;
+
+              for (const p of newProducts) {
+                // 1. Guardar el producto directo a DB
+                const { error: prodError } = await supabase.from('products').insert({
+                  id: p.id,
+                  name: p.name,
+                  barcode: p.barcode,
+                  cost: p.cost,
+                  profit_margin: p.profitMargin,
+                  price: p.price,
+                  supplier_id: p.supplierId || null,
+                  is_pack: p.isPack,
+                  tenant_id: tenantId
+                });
+
+                if (prodError) {
+                  console.error("Error al importar producto", p.name, prodError);
+                  continue; // Skip batch si falla producto
+                }
+
+                // Actualizar localmente
+                store.products.push(p);
+
+                // 2. Guardar lote asociado a DB (Foreign key segura)
+                const batch = newBatches.find(b => b.productId === p.id);
+                if (batch) {
+                  const { error: batchError } = await supabase.from('inventory_batches').insert({
+                    id: batch.id,
+                    product_id: batch.productId,
+                    batch_number: batch.batchNumber,
+                    quantity: batch.quantity,
+                    original_quantity: batch.originalQuantity,
+                    expiry_date: batch.expiryDate,
+                    date_added: batch.dateAdded,
+                    tenant_id: tenantId
+                  });
+                  if (!batchError) {
+                    store.batches.push(batch);
+                  }
+                }
+
+                count++;
+                if (count % 10 === 0) {
+                  toast.loading(`Enviando a la nube... ${count} de ${newProducts.length}`, { id: loadingToast });
+                }
+              }
+
+              // Refrescar UI entera para que Zustand renderice todo lo acumulado en memoria
+              useStore.setState({ products: [...store.products], batches: [...store.batches] });
+              toast.success(`¡Importación exitosa! (${count} artículos)`, { id: loadingToast });
+            } catch (error) {
+              console.error("Error importando CSV:", error);
+              toast.error('Error durante la importación. Ver consola.', { id: loadingToast });
+            }
+          }}
           settings={settings}
           initialTab="catalog"
           stockMovements={stockMovements} // ADDED
           onAddStockMovement={addStockMovement} // ADDED
           onUpdateBatches={updateBatches} // ADDED
         />;
+
+      case 'price_tags':
+        if (!hasPermission(PERMISSIONS.INVENTORY_MANAGE)) return <AccessDenied />;
+        return <PriceTagsCreator products={products} suppliers={suppliers} />;
 
       case 'inventory':
         if (!hasPermission(PERMISSIONS.INVENTORY_MANAGE)) return <AccessDenied />;
@@ -1009,7 +1111,67 @@ const MainApp: React.FC = () => {
           onAddBatch={addBatch}
           onAddSupplier={addSupplier}
           onMassUpdate={() => { }} // Placeholder if needed
-          onImportCSV={() => { }}
+          onImportCSV={async (newProducts, newBatches) => {
+            const loadingToast = toast.loading(`Importando ${newProducts.length} productos, por favor espera...`);
+            try {
+              const store = useStore.getState();
+              const tenantId = store.currentTenant?.id;
+              let count = 0;
+
+              for (const p of newProducts) {
+                // 1. Guardar el producto directo a DB
+                const { error: prodError } = await supabase.from('products').insert({
+                  id: p.id,
+                  name: p.name,
+                  barcode: p.barcode,
+                  cost: p.cost,
+                  profit_margin: p.profitMargin,
+                  price: p.price,
+                  supplier_id: p.supplierId || null,
+                  is_pack: p.isPack,
+                  tenant_id: tenantId
+                });
+
+                if (prodError) {
+                  console.error("Error al importar producto", p.name, prodError);
+                  continue; // Skip batch si falla producto
+                }
+
+                // Actualizar localmente
+                store.products.push(p);
+
+                // 2. Guardar lote asociado a DB (Foreign key segura)
+                const batch = newBatches.find(b => b.productId === p.id);
+                if (batch) {
+                  const { error: batchError } = await supabase.from('inventory_batches').insert({
+                    id: batch.id,
+                    product_id: batch.productId,
+                    batch_number: batch.batchNumber,
+                    quantity: batch.quantity,
+                    original_quantity: batch.originalQuantity,
+                    expiry_date: batch.expiryDate,
+                    date_added: batch.dateAdded,
+                    tenant_id: tenantId
+                  });
+                  if (!batchError) {
+                    store.batches.push(batch);
+                  }
+                }
+
+                count++;
+                if (count % 10 === 0) {
+                  toast.loading(`Enviando a la nube... ${count} de ${newProducts.length}`, { id: loadingToast });
+                }
+              }
+
+              // Refrescar UI entera para que Zustand renderice todo lo acumulado en memoria
+              useStore.setState({ products: [...store.products], batches: [...store.batches] });
+              toast.success(`¡Importación exitosa! (${count} artículos)`, { id: loadingToast });
+            } catch (error) {
+              console.error("Error importando CSV:", error);
+              toast.error('Error durante la importación. Ver consola.', { id: loadingToast });
+            }
+          }}
           settings={settings}
           initialTab="logistics"
           stockMovements={stockMovements} // ADDED
@@ -1186,7 +1348,7 @@ const MainApp: React.FC = () => {
 
       <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
         <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30 px-6 py-4 flex items-center justify-between print:hidden">
-          <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-600"><Menu /></button>
+          <button onClick={() => setSidebarOpen(true)} className="text-gray-600 hover:text-blue-600 transition-colors"><Menu /></button>
           <div className="flex items-center gap-4">
             {currentSession && currentSession.status === 'OPEN' ? (
               <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200 animate-pulse">
@@ -1231,7 +1393,7 @@ const MainApp: React.FC = () => {
             </div>
           </div>
         </header>
-        <div className="p-6 max-w-7xl mx-auto flex-1 flex flex-col">
+        <div className="p-6 flex-1 flex flex-col">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center min-h-[50vh]">
               <div className="flex flex-col items-center gap-3">

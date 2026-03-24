@@ -42,11 +42,15 @@ export const deductStockFromBatches = (
   return newBatches;
 };
 
-export const getTotalStock = (batches: InventoryBatch[], productId: string): number => {
+export const getTotalStock = (batches: InventoryBatch[], productId: string, stockMap?: Record<string, number>): number => {
+  if (stockMap && stockMap[productId] !== undefined) {
+    return stockMap[productId];
+  }
   return batches
     .filter(b => b.productId === productId)
     .reduce((acc, b) => acc + b.quantity, 0);
 };
+
 
 export const breakPack = (
   products: Product[],
