@@ -3,6 +3,7 @@ package com.example.carwash.data.repository
 import com.example.carwash.data.model.Booking
 import com.example.carwash.data.model.BookingStatus
 import com.example.carwash.utils.Timer.WashDuration
+import java.util.*
 
 object BookingRepository {
 
@@ -20,7 +21,7 @@ object BookingRepository {
         date: String = "Hoy",
         time: String = "Ahora"
     ) {
-        val newId = if (bookings.isEmpty()) 1 else bookings.maxOf { it.id } + 1
+        val newId = UUID.randomUUID().toString() // Generar un ID de String único
         val durationMinutes = WashDuration.getDurationMinutes(service)
         val startTimestamp = System.currentTimeMillis()
         val endTimestamp = startTimestamp + durationMinutes * 60 * 1000L
@@ -42,11 +43,11 @@ object BookingRepository {
         )
     }
 
-    fun cancelBooking(id: Int) {
+    fun cancelBooking(id: String) { // Cambiado a String
         bookings.removeAll { it.id == id }
     }
 
-    fun completeBooking(id: Int) {
+    fun completeBooking(id: String) { // Cambiado a String
         bookings.find { it.id == id }?.status = BookingStatus.COMPLETED
     }
 

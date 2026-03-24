@@ -1,7 +1,7 @@
 package com.example.carwash.data.model
 
 data class Booking(
-    val id: Int,
+    val id: String,
     val address: String,
     val date: String,
     val time: String,
