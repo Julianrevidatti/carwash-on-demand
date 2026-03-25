@@ -7,8 +7,16 @@ object VehicleRepository {
 
     fun getVehicles(): List<Vehicle> = vehicles
 
+    fun setVehicles(newVehicles: List<Vehicle>) {
+        vehicles.clear()
+        vehicles.addAll(newVehicles)
+    }
+
     fun addVehicle(vehicle: Vehicle) {
-        vehicles.add(vehicle)
+        // Evitar duplicados por patente si se desea
+        if (vehicles.none { it.plate == vehicle.plate }) {
+            vehicles.add(vehicle)
+        }
     }
 
     fun removeVehicle(index: Int) {
@@ -21,5 +29,9 @@ object VehicleRepository {
         if (index in vehicles.indices) {
             vehicles[index] = vehicle
         }
+    }
+
+    fun clear() {
+        vehicles.clear()
     }
 }

@@ -27,15 +27,15 @@ class VehiclesAdapter(
             tvVehicleType.text = "Tipo de vehículo: ${vehicle.type}"
 
             btnDelete.setOnClickListener {
-                val pos = holder.adapterPosition
-                if (pos != RecyclerView.NO_ID.toInt()) {
+                val pos = holder.bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
                     onDeleteClick(pos)
                 }
             }
 
             btnEdit.setOnClickListener {
-                val pos = holder.adapterPosition
-                if (pos != RecyclerView.NO_ID.toInt()) {
+                val pos = holder.bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
                     onEditClick(vehicle, pos)
                 }
             }
@@ -57,5 +57,11 @@ class VehiclesAdapter(
     fun removeVehicle(position: Int) {
         vehicles.removeAt(position)
         notifyItemRemoved(position)
+    }
+
+    fun updateList(newList: List<Vehicle>) {
+        vehicles.clear()
+        vehicles.addAll(newList)
+        notifyDataSetChanged()
     }
 }
