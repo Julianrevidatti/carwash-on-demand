@@ -65,7 +65,8 @@
                 android:text="¿Qué lavado necesitás hoy?"
                 android:textSize="16sp" />
 
-            <TextView
+            <!-- BUSCADOR COMO CAMPO DE TEXTO EDITABLE -->
+            <EditText
                 android:id="@+id/search_bar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -75,7 +76,9 @@
                 android:drawablePadding="12dp"
                 android:gravity="center_vertical"
                 android:padding="16dp"
-                android:text="Ubicación donde recibirás el lavado" />
+                android:hint="Ingresá la dirección para el lavado"
+                android:inputType="textPostalAddress"
+                android:textSize="14sp" />
 
             <TextView
                 android:id="@+id/services_title"

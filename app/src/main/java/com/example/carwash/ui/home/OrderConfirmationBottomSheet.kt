@@ -21,6 +21,7 @@ import java.util.*
 
 class OrderConfirmationBottomSheet(
     private val serviceName: String,
+    private val initialLocation: String = "",
     private val onOrderConfirmed: () -> Unit
 ) : BottomSheetDialogFragment() {
 
@@ -143,7 +144,7 @@ class OrderConfirmationBottomSheet(
 
                             val newBooking = FirebaseBooking(
                                 userId = currentUser.uid,
-                                vehicleId = selectedVehicle.plate, // Usamos la patente como ID de vehículo
+                                vehicleId = selectedVehicle.plate,
                                 userSnapshot = userSnap,
                                 vehicleSnapshot = VehicleSnapshot(
                                     brand = selectedVehicle.brand,
@@ -154,6 +155,7 @@ class OrderConfirmationBottomSheet(
                                 serviceSnapshot = ServiceSnapshot(name = serviceName),
                                 scheduledDate = scheduledTimestamp,
                                 timeSlot = selectedTime,
+                                meetingAddress = initialLocation.ifEmpty { "Ubicación actual" },
                                 status = "PENDING"
                             )
 
@@ -166,7 +168,7 @@ class OrderConfirmationBottomSheet(
                             BookingRepositoryDB().createBooking(newBooking, newAppointment) { success, _ ->
                                 if (success) {
                                     BookingRepository.addBooking(serviceName, vehicleLabel, paymentMethod, selectedDate, selectedTime)
-                                    Toast.makeText(requireContext(), "¡Reserva enviada a la nube!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(requireContext(), "¡Reserva enviada con éxito!", Toast.LENGTH_SHORT).show()
                                     dismiss()
                                     onOrderConfirmed()
                                 } else {
