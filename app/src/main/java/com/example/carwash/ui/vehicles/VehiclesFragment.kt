@@ -2,6 +2,8 @@ package com.example.carwash.ui.vehicles
 
 import android.os.Bundle
 import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -25,6 +27,9 @@ class VehiclesFragment : Fragment(R.layout.fragment_vehicles) {
     
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+
+    private val brands = arrayOf("Volkswagen", "Toyota", "Ford", "Fiat", "Chevrolet", "Renault", "Peugeot", "Honda", "Hyundai", "Nissan")
+    private val types = arrayOf("Sedan", "Hatchback", "SUV", "Pickup", "Coupé", "Monovolumen", "Furgón")
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -116,17 +121,27 @@ class VehiclesFragment : Fragment(R.layout.fragment_vehicles) {
         val dialog = BottomSheetDialog(requireContext())
         val view = layoutInflater.inflate(R.layout.layout_add_vehicle_bottom_sheet, null)
 
-        val etBrand = view.findViewById<EditText>(R.id.etBrand)
+        val actvBrand = view.findViewById<AutoCompleteTextView>(R.id.actvBrand)
         val etModel = view.findViewById<EditText>(R.id.etModel)
         val etPlate = view.findViewById<EditText>(R.id.etPlate)
-        val etType = view.findViewById<EditText>(R.id.etType)
+        val actvType = view.findViewById<AutoCompleteTextView>(R.id.actvType)
         val btnConfirm = view.findViewById<Button>(R.id.btnConfirm)
+        val btnCancel = view.findViewById<Button>(R.id.btnCancel)
+
+        // Set up adapters
+        val brandAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, brands)
+        actvBrand.setAdapter(brandAdapter)
+
+        val typeAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, types)
+        actvType.setAdapter(typeAdapter)
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
 
         btnConfirm.setOnClickListener {
-            val brand = etBrand.text.toString().trim()
+            val brand = actvBrand.text.toString().trim()
             val model = etModel.text.toString().trim()
             val plate = etPlate.text.toString().trim()
-            val type = etType.text.toString().trim()
+            val type = actvType.text.toString().trim()
 
             if (brand.isNotEmpty() && model.isNotEmpty() && plate.isNotEmpty() && type.isNotEmpty()) {
                 val uid = auth.currentUser?.uid ?: return@setOnClickListener
@@ -154,23 +169,33 @@ class VehiclesFragment : Fragment(R.layout.fragment_vehicles) {
         val dialog = BottomSheetDialog(requireContext())
         val view = layoutInflater.inflate(R.layout.layout_add_vehicle_bottom_sheet, null)
 
-        val etBrand = view.findViewById<EditText>(R.id.etBrand)
+        val actvBrand = view.findViewById<AutoCompleteTextView>(R.id.actvBrand)
         val etModel = view.findViewById<EditText>(R.id.etModel)
         val etPlate = view.findViewById<EditText>(R.id.etPlate)
-        val etType = view.findViewById<EditText>(R.id.etType)
+        val actvType = view.findViewById<AutoCompleteTextView>(R.id.actvType)
         val btnConfirm = view.findViewById<Button>(R.id.btnConfirm)
+        val btnCancel = view.findViewById<Button>(R.id.btnCancel)
 
-        etBrand.setText(vehicle.brand)
+        // Set up adapters
+        val brandAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, brands)
+        actvBrand.setAdapter(brandAdapter)
+
+        val typeAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, types)
+        actvType.setAdapter(typeAdapter)
+
+        actvBrand.setText(vehicle.brand, false)
         etModel.setText(vehicle.name)
         etPlate.setText(vehicle.plate)
         etPlate.isEnabled = false // La patente no se debería editar ya que es el ID
-        etType.setText(vehicle.type)
+        actvType.setText(vehicle.type, false)
         btnConfirm.text = "Actualizar"
 
+        btnCancel.setOnClickListener { dialog.dismiss() }
+
         btnConfirm.setOnClickListener {
-            val brand = etBrand.text.toString().trim()
+            val brand = actvBrand.text.toString().trim()
             val model = etModel.text.toString().trim()
-            val type = etType.text.toString().trim()
+            val type = actvType.text.toString().trim()
 
             if (brand.isNotEmpty() && model.isNotEmpty() && type.isNotEmpty()) {
                 val uid = auth.currentUser?.uid ?: return@setOnClickListener
