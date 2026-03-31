@@ -12,6 +12,7 @@ import com.example.carwash.R
 import com.example.carwash.ui.auth.LoginActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.example.carwash.data.repository.VehicleRepository
 
 class ProfileFragment : Fragment() {
 
@@ -42,6 +43,7 @@ class ProfileFragment : Fragment() {
         loadUserProfile()
 
         btnLogout.setOnClickListener {
+            VehicleRepository.clear()
             auth.signOut()
             startActivity(Intent(requireContext(), LoginActivity::class.java))
             requireActivity().finish()

@@ -149,14 +149,6 @@
                                 android:layout_marginTop="4dp"
                                 android:layout_marginBottom="8dp"/>
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="$10000"
-                                android:textColor="@android:color/black"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
-
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnOrderBase"
                                 android:layout_width="match_parent"
@@ -213,14 +205,6 @@
                                 android:textSize="12sp"
                                 android:layout_marginTop="4dp"
                                 android:layout_marginBottom="8dp"/>
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="$25000"
-                                android:textColor="@android:color/black"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnOrderPremium"
@@ -279,14 +263,6 @@
                                 android:layout_marginTop="4dp"
                                 android:layout_marginBottom="8dp"/>
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="$15000"
-                                android:textColor="@android:color/black"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
-
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnOrderExpress"
                                 android:layout_width="match_parent"
@@ -343,14 +319,6 @@
                                 android:textSize="12sp"
                                 android:layout_marginTop="4dp"
                                 android:layout_marginBottom="8dp"/>
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="$50000"
-                                android:textColor="@android:color/black"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnOrderDetailing"
