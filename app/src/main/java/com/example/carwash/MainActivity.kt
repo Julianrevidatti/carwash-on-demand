@@ -7,8 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.example.carwash.databinding.ActivityMainBinding
-import com.example.carwash.utils.FirebaseSeed
-import com.example.carwash.utils.FirebaseSeedUsers    // ← antes FirebaseSeedUsuarios
+import com.example.carwash.utils.validators.FirebaseSeed // Asegúrate de la ruta correcta
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -30,6 +29,8 @@ class MainActivity : AppCompatActivity() {
         val navController = navHostFragment.navController
         binding.navView.setupWithNavController(navController)
 
+        // --- SEED PARA LAVADORES ---
+         FirebaseSeed.loadAll()
 
         val db = FirebaseFirestore.getInstance()
     }

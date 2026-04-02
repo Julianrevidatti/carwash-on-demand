@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CarWash">
 
-        <!-- 🔹 LOGIN VUELVE A SER EL LANZADOR (EVITA TRABAS) -->
+        <!-- Entry point, checks session before showing login -->
         <activity
             android:name=".ui.auth.LoginActivity"
             android:exported="true">

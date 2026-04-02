@@ -1,5 +1,6 @@
 package com.example.carwash.ui.home
 
+import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.os.Bundle
@@ -10,9 +11,10 @@ import android.widget.*
 import com.example.carwash.R
 import com.example.carwash.data.model.*
 import com.example.carwash.data.repository.BookingRepository
-import com.example.carwash.data.repository.BookingRepositoryDB
 import com.example.carwash.data.repository.VehicleRepository
+import com.example.carwash.data.repository.WasherRepository
 import com.example.carwash.utils.PriceCalculator
+import com.example.carwash.utils.WashTimeCalculator
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.Timestamp
@@ -32,6 +34,7 @@ class OrderConfirmationBottomSheet(
     private var selectedMonth = -1
     private var selectedDay = -1
     private var currentPrice = 0.0
+    private val washerRepository = WasherRepository()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -55,18 +58,12 @@ class OrderConfirmationBottomSheet(
 
         tvTitle.text = "Confirmar $serviceName"
 
-        // Vehículos
         val vehicles = VehicleRepository.getVehicles()
         val vehicleLabels = vehicles.map { "${it.name} - ${it.plate}" }
-        val spinnerAdapter = ArrayAdapter(
-            requireContext(),
-            android.R.layout.simple_spinner_item,
-            vehicleLabels
-        )
+        val spinnerAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, vehicleLabels)
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerVehicles.adapter = spinnerAdapter
 
-        // Actualizar precio cuando cambia el vehículo seleccionado
         spinnerVehicles.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, v: View?, position: Int, id: Long) {
                 val selectedVehicle = vehicles[position]
@@ -74,12 +71,9 @@ class OrderConfirmationBottomSheet(
                 tvPrice.text = PriceCalculator.format(currentPrice)
                 tvPrice.setTextColor(resources.getColor(android.R.color.black, null))
             }
-            override fun onNothingSelected(parent: AdapterView<*>) {
-                tvPrice.text = "Seleccioná un vehículo para ver el precio"
-            }
+            override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
-        // Fecha
         btnDate.setOnClickListener {
             val cal = Calendar.getInstance()
             DatePickerDialog(requireContext(), { _, year, month, day ->
@@ -95,7 +89,6 @@ class OrderConfirmationBottomSheet(
                 .show()
         }
 
-        // Hora
         btnTime.setOnClickListener {
             if (selectedDate.isEmpty()) {
                 Toast.makeText(requireContext(), "Primero seleccioná una fecha", Toast.LENGTH_SHORT).show()
@@ -107,15 +100,16 @@ class OrderConfirmationBottomSheet(
                         selectedMonth == cal.get(Calendar.MONTH) &&
                         selectedDay == cal.get(Calendar.DAY_OF_MONTH)
 
-                when {
-                    hour < 8 || hour > 20 || (hour == 20 && minute > 0) ->
-                        Toast.makeText(requireContext(), "Horario de 08:00 a 20:00 hs", Toast.LENGTH_LONG).show()
-                    isToday && hour < cal.get(Calendar.HOUR_OF_DAY) + 1 ->
-                        Toast.makeText(requireContext(), "Mínimo 1 hora de anticipación", Toast.LENGTH_LONG).show()
-                    else -> {
-                        selectedTime = String.format(Locale.getDefault(), "%02d:%02d", hour, minute)
-                        btnTime.text = selectedTime
-                    }
+                val currentHour = cal.get(Calendar.HOUR_OF_DAY)
+                val currentMinute = cal.get(Calendar.MINUTE)
+
+                if (false && (hour < 8 || hour > 20 || (hour == 20 && minute > 0))) {
+                    Toast.makeText(requireContext(), "Horario de 08:00 a 20:00 hs", Toast.LENGTH_LONG).show()
+                } else if (isToday && (hour < currentHour || (hour == currentHour && minute <= currentMinute))) {
+                    Toast.makeText(requireContext(), "Seleccioná una hora futura", Toast.LENGTH_SHORT).show()
+                } else {
+                    selectedTime = String.format(Locale.getDefault(), "%02d:%02d", hour, minute)
+                    btnTime.text = selectedTime
                 }
             }, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true).show()
         }
@@ -128,94 +122,109 @@ class OrderConfirmationBottomSheet(
                 return@setOnClickListener
             }
 
-            val currentUser = FirebaseAuth.getInstance().currentUser
-            if (currentUser == null) {
-                Toast.makeText(requireContext(), "Iniciá sesión primero", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
+            val currentUser = FirebaseAuth.getInstance().currentUser ?: return@setOnClickListener
 
             btnConfirm.isEnabled = false
-            btnConfirm.text = "Procesando..."
+            btnConfirm.text = "Buscando lavador..."
 
-            val db = FirebaseFirestore.getInstance()
-            db.collection("users").document(currentUser.uid).get()
-                .addOnSuccessListener { document ->
-                    if (!isAdded) return@addOnSuccessListener
+            // Search for a random washer
+            washerRepository.getRandomWasherForService(serviceName) { washer ->
+                if (!isAdded) return@getRandomWasherForService
 
-                    if (document != null && document.exists()) {
-                        val selectedVehicle = vehicles[spinnerVehicles.selectedItemPosition]
-                        val vehicleLabel = "${selectedVehicle.name} (${selectedVehicle.plate})"
-                        val paymentMethod = if (rgPayment.checkedRadioButtonId == R.id.rbDigital)
-                            "Mercado Pago" else "Efectivo"
-
-                        // Precio final calculado
-                        val finalPrice = PriceCalculator.calculate(serviceName, selectedVehicle.type)
-
-                        val newBooking = FirebaseBooking(
-                            userId = currentUser.uid,
-                            vehicleId = selectedVehicle.plate,
-                            userSnapshot = UserSnapshot(
-                                name = document.getString("name") ?: "",
-                                lastName = document.getString("lastName") ?: "",
-                                phone = document.getString("phone") ?: ""
-                            ),
-                            vehicleSnapshot = VehicleSnapshot(
-                                brand = selectedVehicle.brand,
-                                model = selectedVehicle.name,
-                                licensePlate = selectedVehicle.plate,
-                                type = selectedVehicle.type
-                            ),
-                            serviceSnapshot = ServiceSnapshot(
-                                name = serviceName,
-                                basePrice = finalPrice  // precio real guardado en Firebase
-                            ),
-                            scheduledDate = try {
-                                val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-                                Timestamp(sdf.parse("$selectedDate $selectedTime")!!)
-                            } catch (e: Exception) {
-                                Timestamp.now()
-                            },
-                            timeSlot = selectedTime,
-                            meetingAddress = initialLocation.ifEmpty { "Ubicación actual" },
-                            finalAmount = finalPrice,  // campo específico para el monto final
-                            status = "PENDING"
-                        )
-
-                        val newAppointment = FirebaseAppointment(
-                            date = newBooking.scheduledDate,
-                            time = selectedTime,
-                            appointmentStatus = "CONFIRMED"
-                        )
-
-                        BookingRepositoryDB().createBooking(newBooking, newAppointment) { success, _ ->
-                            if (!isAdded) return@createBooking
-
-                            if (success) {
-                                BookingRepository.addBooking(
-                                    serviceName, vehicleLabel, paymentMethod,
-                                    selectedDate, selectedTime
-                                )
-                                onOrderConfirmed()
-                                dismiss()
-                                Toast.makeText(context, "¡Reserva enviada con éxito!", Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(context, "Error al guardar la reserva", Toast.LENGTH_SHORT).show()
-                                btnConfirm.isEnabled = true
-                                btnConfirm.text = "Confirmar"
-                            }
-                        }
-                    } else {
-                        Toast.makeText(context, "No se encontró el perfil del usuario", Toast.LENGTH_SHORT).show()
-                        btnConfirm.isEnabled = true
-                        btnConfirm.text = "Confirmar"
-                    }
-                }
-                .addOnFailureListener {
-                    if (!isAdded) return@addOnFailureListener
-                    Toast.makeText(context, "Error al obtener datos del usuario", Toast.LENGTH_SHORT).show()
+                if (washer != null) {
+                    showWasherFoundDialog(washer, currentUser.uid, vehicles[spinnerVehicles.selectedItemPosition], rgPayment.checkedRadioButtonId)
+                } else {
+                    Toast.makeText(context, "No hay lavadores disponibles", Toast.LENGTH_LONG).show()
                     btnConfirm.isEnabled = true
                     btnConfirm.text = "Confirmar"
                 }
+            }
         }
+    }
+
+    private fun showWasherFoundDialog(washer: Washer, userId: String, vehicle: com.example.carwash.ui.vehicles.Vehicle, paymentId: Int) {
+        val estimatedMinutes = WashTimeCalculator.getEstimatedMinutes(serviceName, washer.speedFactor)
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("¡Lavador Encontrado!")
+            .setMessage("${washer.name} ${washer.lastName} aceptó tu pedido.\n" +
+                       "Rating: ⭐ ${washer.averageRating}\n" +
+                       "Tiempo estimado de lavado: $estimatedMinutes minutos\n\n" +
+                       "¿Deseas confirmar la reserva?")
+            .setPositiveButton("Confirmar") { _, _ ->
+                proceedWithBooking(washer, userId, vehicle, paymentId, estimatedMinutes)
+            }
+            .setNegativeButton("Cancelar") { _, _ ->
+                val btnConfirm = view?.findViewById<Button>(R.id.btnConfirmOrder)
+                btnConfirm?.isEnabled = true
+                btnConfirm?.text = "Confirmar"
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun proceedWithBooking(washer: Washer, userId: String, vehicle: com.example.carwash.ui.vehicles.Vehicle, paymentId: Int, duration: Int) {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("users").document(userId).get()
+            .addOnSuccessListener { document ->
+                if (!isAdded) return@addOnSuccessListener
+                
+                val paymentMethod = if (paymentId == R.id.rbDigital) "Mercado Pago" else "Efectivo"
+                val finalPrice = PriceCalculator.calculate(serviceName, vehicle.type)
+
+                val newBooking = FirebaseBooking(
+                    userId = userId,
+                    washerId = washer.id,
+                    vehicleId = vehicle.plate,
+                    userSnapshot = UserSnapshot(
+                        name = document.getString("name") ?: "",
+                        lastName = document.getString("lastName") ?: "",
+                        phone = document.getString("phone") ?: ""
+                    ),
+                    vehicleSnapshot = VehicleSnapshot(
+                        brand = vehicle.brand,
+                        model = vehicle.name,
+                        licensePlate = vehicle.plate,
+                        type = vehicle.type
+                    ),
+                    serviceSnapshot = ServiceSnapshot(name = serviceName, basePrice = finalPrice),
+                    washerSnapshot = WasherSnapshot(
+                        washerId = washer.id,
+                        name = washer.name,
+                        lastName = washer.lastName,
+                        phone = washer.phone,
+                        rating = washer.averageRating,
+                        speedFactor = washer.speedFactor
+                    ),
+                    scheduledDate = try {
+                        val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                        Timestamp(sdf.parse("$selectedDate $selectedTime")!!)
+                    } catch (e: Exception) { Timestamp.now() },
+                    estimatedDurationMinutes = duration,
+                    timeSlot = selectedTime,
+                    meetingAddress = initialLocation.ifEmpty { "Ubicación actual" },
+                    finalAmount = finalPrice,
+                    status = "PENDING"
+                )
+
+                val newAppointment = FirebaseAppointment(
+                    bookingId = "", 
+                    washerId = washer.id,
+                    date = newBooking.scheduledDate,
+                    time = selectedTime,
+                    appointmentStatus = "CONFIRMED"
+                )
+
+                BookingRepository.createBooking(newBooking, newAppointment) { success, _ ->
+                    if (!isAdded) return@createBooking
+                    if (success) {
+                        onOrderConfirmed()
+                        dismiss()
+                        Toast.makeText(context, "¡Reserva confirmada con ${washer.name}!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Error al procesar la reserva", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
     }
 }

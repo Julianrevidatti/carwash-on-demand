@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <!-- Este es el contenedor donde se cargarán tus fragmentos (Inicio, Agenda, Perfil) -->
+    <!-- Container were fragments will be placed (home, bookings, profile, etc) -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/nav_host_fragment_activity_main"
         android:name="androidx.navigation.fragment.NavHostFragment"
@@ -20,7 +20,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:navGraph="@navigation/mobile_navigation" />
 
-    <!-- La barra de navegación inferior permanece igual -->
+    <!-- Bottom navigation bar (It remains the same in all pages) -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/nav_view"
         android:layout_width="0dp"

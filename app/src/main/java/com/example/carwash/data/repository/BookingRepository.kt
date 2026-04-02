@@ -1,64 +1,126 @@
 package com.example.carwash.data.repository
 
-import com.example.carwash.data.model.Booking
-import com.example.carwash.data.model.BookingStatus
-import com.example.carwash.utils.Timer.WashDuration
-import java.util.*
+import com.example.carwash.data.model.FirebaseAppointment
+import com.example.carwash.data.model.FirebaseBooking
+import com.example.carwash.data.model.Payment
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 
 object BookingRepository {
 
-    private val bookings = mutableListOf<Booking>()
+    private val db = FirebaseFirestore.getInstance()
 
-    fun getBookings(): List<Booking> {
-        updateCompletedBookings()
-        return bookings
-    }
-
-    fun addBooking(
-        service: String,
-        vehicle: String = "No especificado",
-        paymentMethod: String = "Efectivo",
-        date: String = "Hoy",
-        time: String = "Ahora"
+    fun createBooking(
+        booking: FirebaseBooking,
+        appointment: FirebaseAppointment,
+        onResult: (Boolean, String) -> Unit
     ) {
-        val newId = UUID.randomUUID().toString() // Generar un ID de String único
-        val durationMinutes = WashDuration.getDurationMinutes(service)
-        val startTimestamp = System.currentTimeMillis()
-        val endTimestamp = startTimestamp + durationMinutes * 60 * 1000L
+        val bookingRef     = db.collection("bookings").document()
+        val appointmentRef = db.collection("appointments").document()
 
-        bookings.add(
-            Booking(
-                id = newId,
-                address = "Ubicación actual",
-                date = date,
-                time = time,
-                service = service,
-                status = BookingStatus.PENDING,
-                vehicle = vehicle,
-                paymentMethod = paymentMethod,
-                durationMinutes = durationMinutes,
-                startTimestamp = startTimestamp,
-                endTimestamp = endTimestamp
-            )
-        )
+        val batch = db.batch()
+        batch.set(bookingRef, booking)
+        batch.set(appointmentRef, appointment.copy(bookingId = bookingRef.id))
+
+        batch.commit()
+            .addOnSuccessListener { onResult(true, bookingRef.id) }
+            .addOnFailureListener { onResult(false, "") }
     }
 
-    fun cancelBooking(id: String) { // Cambiado a String
-        bookings.removeAll { it.id == id }
-    }
-
-    fun completeBooking(id: String) { // Cambiado a String
-        bookings.find { it.id == id }?.status = BookingStatus.COMPLETED
-    }
-
-    private fun updateCompletedBookings() {
-        val currentTime = System.currentTimeMillis()
-        bookings.forEach { booking ->
-            if (booking.status == BookingStatus.PENDING &&
-                booking.endTimestamp > 0 &&
-                currentTime >= booking.endTimestamp) {
-                booking.status = BookingStatus.COMPLETED
+    fun getUserBookings(
+        userId: String,
+        onResult: (List<FirebaseBooking>) -> Unit
+    ) {
+        db.collection("bookings")
+            .whereEqualTo("userId", userId)
+            // .orderBy("createdAt", Query.Direction.DESCENDING) // Requiere índice en Firestore
+            .get()
+            .addOnSuccessListener { snap ->
+                onResult(snap.toObjects(FirebaseBooking::class.java))
             }
-        }
+            .addOnFailureListener { onResult(emptyList()) }
+    }
+
+    fun getWasherBookings(
+        washerId: String,
+        onResult: (List<FirebaseBooking>) -> Unit
+    ) {
+        db.collection("bookings")
+            .whereEqualTo("washerId", washerId)
+            .whereIn("status", listOf("PENDING", "SCHEDULED", "IN_PROGRESS"))
+            .orderBy("scheduledDate", Query.Direction.ASCENDING)
+            .get()
+            .addOnSuccessListener { snap ->
+                onResult(snap.toObjects(FirebaseBooking::class.java))
+            }
+            .addOnFailureListener { onResult(emptyList()) }
+    }
+
+    fun getBooking(bookingId: String, onResult: (FirebaseBooking?) -> Unit) {
+        db.collection("bookings").document(bookingId)
+            .get()
+            .addOnSuccessListener { doc ->
+                onResult(doc.toObject(FirebaseBooking::class.java))
+            }
+            .addOnFailureListener { onResult(null) }
+    }
+
+    fun updateStatus(
+        bookingId: String,
+        newStatus: String,  // PENDING | SCHEDULED | IN_PROGRESS | COMPLETED | CANCELLED
+        onResult: (Boolean) -> Unit
+    ) {
+        db.collection("bookings").document(bookingId)
+            .update("status", newStatus)
+            .addOnSuccessListener { onResult(true) }
+            .addOnFailureListener { onResult(false) }
+    }
+
+    fun listenToBooking(
+        bookingId: String,
+        onChange: (FirebaseBooking?) -> Unit
+    ) {
+        db.collection("bookings").document(bookingId)
+            .addSnapshotListener { snap, _ ->
+                onChange(snap?.toObject(FirebaseBooking::class.java))
+            }
+    }
+
+    // ── Payments (subcollection) ──────────────────────────
+
+    fun registerPayment(
+        bookingId: String,
+        payment: Payment,
+        onResult: (Boolean) -> Unit
+    ) {
+        db.collection("bookings").document(bookingId)
+            .collection("payments").document()
+            .set(payment)
+            .addOnSuccessListener { onResult(true) }
+            .addOnFailureListener { onResult(false) }
+    }
+
+    fun getPayment(bookingId: String, onResult: (Payment?) -> Unit) {
+        db.collection("bookings").document(bookingId)
+            .collection("payments")
+            .limit(1)
+            .get()
+            .addOnSuccessListener { snap ->
+                onResult(snap.documents.firstOrNull()?.toObject(Payment::class.java))
+            }
+            .addOnFailureListener { onResult(null) }
+    }
+
+    fun updatePaymentStatus(
+        bookingId: String,
+        paymentId: String,
+        newStatus: String,  // APPROVED | REJECTED
+        onResult: (Boolean) -> Unit
+    ) {
+        db.collection("bookings").document(bookingId)
+            .collection("payments").document(paymentId)
+            .update("paymentStatus", newStatus)
+            .addOnSuccessListener { onResult(true) }
+            .addOnFailureListener { onResult(false) }
     }
 }

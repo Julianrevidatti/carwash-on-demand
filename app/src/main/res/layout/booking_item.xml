@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -82,6 +83,42 @@
             android:textSize="13sp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
+
+        <!-- WASHER INFO (NUEVO) -->
+        <LinearLayout
+            android:id="@+id/layoutWasher"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@android:drawable/ic_menu_myplaces"
+                app:tint="@color/azulcarwash"/>
+
+            <TextView
+                android:id="@+id/tvWasherName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="Lavador: Juan Perez"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="@color/azulcarwash"/>
+
+            <TextView
+                android:id="@+id/tvWasherRating"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="⭐ 4.8"
+                android:textSize="12sp"
+                android:textColor="#F4B400"/>
+        </LinearLayout>
 
         <TextView
             android:id="@+id/status"

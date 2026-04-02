@@ -29,6 +29,22 @@ class WasherRepository {
             .addOnFailureListener { onResult(null) }
     }
 
+    fun getRandomWasherForService(serviceName: String, onResult: (Washer?) -> Unit) {
+        db.collection("washers")
+            .whereArrayContains("specialties", serviceName)
+            .whereEqualTo("availabilityStatus", "AVAILABLE")
+            .get()
+            .addOnSuccessListener { snap ->
+                if (!snap.isEmpty) {
+                    val randomWasher = snap.toObjects(Washer::class.java).random()
+                    onResult(randomWasher)
+                } else {
+                    onResult(null)
+                }
+            }
+            .addOnFailureListener { onResult(null) }
+    }
+
     fun updateAvailability(
         washerId: String,
         status: String,   // "AVAILABLE" | "BUSY" | "INACTIVE"

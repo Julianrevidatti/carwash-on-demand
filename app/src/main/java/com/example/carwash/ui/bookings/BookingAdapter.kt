@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.carwash.R
@@ -26,6 +27,9 @@ class BookingAdapter(
         val payment: TextView = view.findViewById(R.id.payment)
         val status: TextView = view.findViewById(R.id.status)
         val cancelBtn: Button = view.findViewById(R.id.cancelBtn)
+        val layoutWasher: LinearLayout = view.findViewById(R.id.layoutWasher)
+        val tvWasherName: TextView = view.findViewById(R.id.tvWasherName)
+        val tvWasherRating: TextView = view.findViewById(R.id.tvWasherRating)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BookingViewHolder {
@@ -45,8 +49,16 @@ class BookingAdapter(
 
         holder.date.text = "Fecha: ${booking.date}"
         holder.hour.text = "Hora: ${booking.time}"
-        holder.address.text = "Vehículo: ${booking.vehicle}"   // usamos este campo para el vehículo
+        holder.address.text = "Vehículo: ${booking.vehicle}"
         holder.payment.text = "Pago: ${booking.paymentMethod}"
+
+        if (booking.washerName != null) {
+            holder.layoutWasher.visibility = View.VISIBLE
+            holder.tvWasherName.text = "Lavador: ${booking.washerName}"
+            holder.tvWasherRating.text = "⭐ ${booking.washerRating ?: 5.0}"
+        } else {
+            holder.layoutWasher.visibility = View.GONE
+        }
 
         val imageRes = when {
             booking.service.contains("Base", ignoreCase = true) -> R.drawable.lavadobase
@@ -62,6 +74,11 @@ class BookingAdapter(
                 holder.status.text = "Estado: Programado"
                 holder.status.setTextColor(android.graphics.Color.parseColor("#2D5BFF"))
                 holder.cancelBtn.visibility = View.VISIBLE
+            }
+            BookingStatus.IN_PROGRESS -> {
+                holder.status.text = "Estado: En Proceso"
+                holder.status.setTextColor(android.graphics.Color.parseColor("#F4B400")) // AMARILLO
+                holder.cancelBtn.visibility = View.GONE
             }
             BookingStatus.COMPLETED -> {
                 holder.status.text = "Estado: Finalizado"

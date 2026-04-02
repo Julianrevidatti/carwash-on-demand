@@ -11,5 +11,7 @@ data class Booking(
     val paymentMethod: String = "Efectivo",
     val durationMinutes: Int = 0,
     val startTimestamp: Long = 0L,
-    val endTimestamp: Long = 0L
+    val endTimestamp: Long = 0L,
+    val washerName: String? = null,
+    val washerRating: Double? = null
 )
