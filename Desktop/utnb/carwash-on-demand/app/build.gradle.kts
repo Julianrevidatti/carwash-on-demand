@@ -16,6 +16,17 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Load GOOGLE_MAPS_KEY from .env
+        val envFile = project.rootProject.file(".env")
+        val googleMapsApiKey = if (envFile.exists()) {
+            val env = java.util.Properties()
+            env.load(envFile.inputStream())
+            env.getProperty("GOOGLE_MAPS_KEY") ?: ""
+        } else {
+            System.getenv("GOOGLE_MAPS_KEY") ?: ""
+        }
+        manifestPlaceholders["GOOGLE_MAPS_KEY"] = googleMapsApiKey
     }
 
     buildTypes {

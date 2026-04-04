@@ -16,7 +16,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="estaba la key asi que seguro fue pòr es que no se comiteo Xd" />
+            android:value="${GOOGLE_MAPS_KEY}" />
 
         <!-- Entry point, checks session before showing login -->
         <activity
