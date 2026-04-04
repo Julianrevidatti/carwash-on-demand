@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/navigation_home"
+        android:icon="@drawable/home"
+        android:title="Inicio" />
+    <item
+        android:id="@+id/navigation_reservas"
+        android:icon="@drawable/calendar"
+        android:title="Reservas"/>
+    <item
+        android:id="@+id/navigation_vehicles"
+        android:icon="@drawable/iconoreservas"
+        android:title="Vehiculos" />
+
+    <item
+        android:id="@+id/navigation_notifications"
+        android:icon="@drawable/ic_notifications"
+        android:title="Alertas" />
+    <item
+        android:id="@+id/navigation_profile"
+        android:icon="@drawable/ic_profile"
+        android:title="Perfil" />
+</menu>
+    
