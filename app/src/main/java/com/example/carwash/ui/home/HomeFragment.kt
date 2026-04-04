@@ -114,9 +114,10 @@ class HomeFragment : Fragment() {
 
         // 4. Notificación final: Terminó
         handler.postDelayed({
+            if (!isAdded) return@postDelayed
             notificationHelper.sendStatusNotification(
-                "Lavado finalizado", 
-                "¡Tu auto quedó impecable!", 
+                "Lavado finalizado",
+                "¡Tu auto quedó impecable!",
                 4
             )
             Toast.makeText(requireContext(), "¡Lavado finalizado!", Toast.LENGTH_LONG).show()
