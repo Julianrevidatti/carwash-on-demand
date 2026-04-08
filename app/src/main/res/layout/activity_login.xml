@@ -12,7 +12,7 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <!-- Logo y Título -->
+        <!-- titulo -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -34,7 +34,6 @@
                 android:textStyle="bold"/>
         </LinearLayout>
 
-        <!-- Título -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -44,7 +43,6 @@
             android:textSize="24sp"
             android:textStyle="bold"/>
 
-        <!-- Subtítulo -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -54,7 +52,7 @@
             android:textColor="@android:color/darker_gray"
             android:textSize="16sp"/>
 
-        <!-- Campo de Email con el nuevo estilo -->
+        <!-- mail -->
         <EditText
             android:id="@+id/etEmailLogin"
             android:layout_width="match_parent"
@@ -65,10 +63,7 @@
             android:inputType="textEmailAddress"
             android:padding="16dp"/>
 
-        <!-- Campo de Contraseña con el nuevo estilo -->
-
-        <!-- Botón de Login -->
-
+        <!-- contrasena -->
         <EditText
             android:id="@+id/etPasswordLogin"
             android:layout_width="match_parent"
@@ -78,6 +73,7 @@
             android:inputType="textPassword"
             android:padding="16dp" />
 
+        <!-- boton login -->
         <Button
             android:id="@+id/btnLogin"
             android:layout_width="match_parent"
@@ -87,7 +83,7 @@
             android:text="Iniciar Sesión"
             app:backgroundTint="@color/azulcarwash"/>
 
-        <!-- Texto para ir al registro -->
+        <!-- registrarse -->
         <TextView
             android:id="@+id/tvGoRegister"
             android:layout_width="match_parent"

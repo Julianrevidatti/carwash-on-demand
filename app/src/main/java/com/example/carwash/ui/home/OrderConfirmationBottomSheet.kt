@@ -55,7 +55,7 @@ class OrderConfirmationBottomSheet(
         val spinnerVehicles = view.findViewById<Spinner>(R.id.spinnerVehicles)
         val tvPrice = view.findViewById<TextView>(R.id.tvPrice)
         val rgPayment = view.findViewById<RadioGroup>(R.id.rgPayment)
-        rgPayment.visibility = View.GONE // Ocultamos porque ya se seleccionó antes
+        rgPayment.visibility = View.GONE // Ocultamos porque ya se selecciono
 
         val btnDate = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSelectDate)
         val btnTime = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSelectTime)
@@ -154,7 +154,7 @@ class OrderConfirmationBottomSheet(
 
             if (washer != null) {
                 showWasherFoundDialog(washer, currentUser.uid, VehicleRepository.getVehicles()[0], 0) 
-                // Nota: Aquí se usa el primer vehículo por simplicidad en la búsqueda, 
+                // aca se usa el primer vehículo por simplicidad en la búsqueda,
                 // pero en el dialog se usa el seleccionado en el spinner.
             } else {
                 Toast.makeText(context, "No hay lavadores disponibles", Toast.LENGTH_LONG).show()
@@ -192,8 +192,7 @@ class OrderConfirmationBottomSheet(
                 if (!isAdded) return@addOnSuccessListener
                 
                 val finalPrice = PriceCalculator.calculate(serviceName, vehicle.type)
-                
-                // Trigger confirmation notification
+
                 val notificationHelper = NotificationHelper(requireContext())
                 notificationHelper.sendBookingConfirmationNotification(serviceName, selectedTime)
 

@@ -13,7 +13,7 @@ object VehicleRepository {
     }
 
     fun addVehicle(vehicle: Vehicle) {
-        // Evitar duplicados por patente si se desea
+        // Evitar duplicados por patente
         if (vehicles.none { it.plate == vehicle.plate }) {
             vehicles.add(vehicle)
         }

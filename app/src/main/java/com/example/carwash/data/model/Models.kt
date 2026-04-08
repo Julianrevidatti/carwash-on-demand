@@ -29,7 +29,7 @@ data class Washer(
     val phone: String = "",
     val coverageZone: String = "",
     val specialties: List<String> = emptyList(),
-    val speedFactor: Double = 1.0, // Factor de velocidad: 1.0 normal, <1.0 rápido, >1.0 lento
+    val speedFactor: Double = 1.0, // velocidad: 1.0 normal, <1.0 rápido, >1.0 lento
     val location: GeoPoint = GeoPoint(0.0, 0.0),
     val availabilityStatus: String = "AVAILABLE",
     val averageRating: Double = 5.0,
@@ -42,7 +42,7 @@ data class Service(
     val name: String = "",
     val description: String = "",
     val basePrice: Double = 0.0,
-    val estimatedDuration: Int = 30, // en minutos
+    val estimatedDuration: Int = 30, // minutos
     val vehicleType: String = "all",
     val status: String = "active"
 )
@@ -86,7 +86,7 @@ data class FirebaseBooking(
     val serviceSnapshot: ServiceSnapshot = ServiceSnapshot(),
     val washerSnapshot: WasherSnapshot = WasherSnapshot(),
     val scheduledDate: Timestamp = Timestamp.now(),
-    val estimatedDurationMinutes: Int = 30, // Duración calculada final
+    val estimatedDurationMinutes: Int = 30,
     val timeSlot: String = "",
     val location: GeoPoint = GeoPoint(0.0, 0.0),
     val meetingAddress: String = "",
@@ -96,8 +96,8 @@ data class FirebaseBooking(
 )
 
 data class Payment(
-    val paymentMethod: String = "",     // DIGITAL | CASH
-    val paymentStatus: String = "PENDING", // PENDING | APPROVED | REJECTED
+    val paymentMethod: String = "",
+    val paymentStatus: String = "PENDING",
     val receiptUrl: String = "",
     val createdAt: Timestamp = Timestamp.now()
 )

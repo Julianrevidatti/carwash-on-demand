@@ -47,7 +47,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     private val requestPermissionLauncher = registerForActivityResult<Array<String>, Map<String, Boolean>>(
-        ActivityResultContracts.RequestMultiple()
+        ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val fineLocationGranted = permissions[android.Manifest.permission.ACCESS_FINE_LOCATION] ?: false
         val notificationsGranted = permissions[android.Manifest.permission.POST_NOTIFICATIONS] ?: false
@@ -128,10 +128,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         binding.btnOrderPremium.setOnClickListener { startLocationChoiceFlow("Premium") }
         binding.btnOrderExpress.setOnClickListener { startLocationChoiceFlow("Express") }
         binding.btnOrderDetailing.setOnClickListener { startLocationChoiceFlow("Detailing") }
-        
-        binding.btnRequestWash.setOnClickListener {
-            showServiceTypeSelector()
-        }
 
         binding.searchBar.setOnClickListener {
             val fields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS)

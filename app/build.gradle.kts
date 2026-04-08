@@ -8,18 +8,18 @@ plugins {
 
 android {
     namespace = "com.example.carwash"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.carwash"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Load GOOGLE_MAPS_KEY from .env
+        // carga de api key maps
         val envFile = project.rootProject.file(".env")
         val googleMapsApiKey = if (envFile.exists()) {
             val env = Properties()
@@ -72,4 +72,6 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.android.gms:play-services-location:21.1.0")
     implementation("com.google.android.libraries.places:places:3.3.0")
+    implementation("com.google.maps.android:maps-ktx:5.0.0")
+    implementation("com.google.maps.android:maps-utils-ktx:5.0.0")
 }

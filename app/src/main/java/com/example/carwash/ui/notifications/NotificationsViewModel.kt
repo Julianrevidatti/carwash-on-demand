@@ -36,7 +36,7 @@ class NotificationsViewModel : ViewModel() {
                 }
 
                 if (snapshot != null && !snapshot.isEmpty) {
-                    // Ordenamos por fecha de creación (o scheduledDate si no existe createdAt)
+                    // ordenado por fecha de creacion
                     val latest = snapshot.toObjects(FirebaseBooking::class.java)
                         .sortedByDescending { it.createdAt }
                         .firstOrNull()

@@ -54,7 +54,7 @@
 
         </LinearLayout>
 
-        <!-- INFO -->
+        <!-- info de la reserva -->
         <TextView
             android:id="@+id/address"
             android:text="Direccion: Guareschi 45, Tigre"
@@ -93,7 +93,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
-        <!-- WASHER INFO (NUEVO) -->
+        <!-- info del lavador -->
         <LinearLayout
             android:id="@+id/layoutWasher"
             android:orientation="horizontal"
@@ -138,7 +138,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
-        <!-- BOTONES -->
+        <!-- cancelar -->
         <LinearLayout
             android:orientation="horizontal"
             android:layout_marginTop="13dp"

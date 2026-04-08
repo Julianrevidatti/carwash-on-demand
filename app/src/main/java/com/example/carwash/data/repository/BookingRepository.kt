@@ -33,7 +33,6 @@ object BookingRepository {
     ) {
         db.collection("bookings")
             .whereEqualTo("userId", userId)
-            // .orderBy("createdAt", Query.Direction.DESCENDING) // Requiere índice en Firestore
             .get()
             .addOnSuccessListener { snap ->
                 onResult(snap.toObjects(FirebaseBooking::class.java))

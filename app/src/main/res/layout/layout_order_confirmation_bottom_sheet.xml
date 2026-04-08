@@ -33,7 +33,7 @@
         android:background="@drawable/edit_text_background"
         android:layout_marginBottom="16dp"/>
 
-    <!-- Precio calculado -->
+    <!-- precio calculado -->
     <TextView
         android:id="@+id/tvPriceLabel"
         android:layout_width="wrap_content"
@@ -89,14 +89,6 @@
             android:textAllCaps="false"
             app:cornerRadius="12dp"/>
     </LinearLayout>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Medio de pago"
-        android:textColor="@color/black"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp"/>
 
     <RadioGroup
         android:id="@+id/rgPayment"

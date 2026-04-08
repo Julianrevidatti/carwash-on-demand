@@ -12,7 +12,6 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <!-- Logo y Título (como ya tenías) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -35,7 +34,6 @@
                 android:textStyle="bold"/>
         </LinearLayout>
 
-        <!-- Título -->
         <TextView
             android:id="@+id/registrarse"
             android:layout_width="wrap_content"
@@ -46,7 +44,6 @@
             android:textSize="24sp"
             android:textStyle="bold"/>
 
-        <!-- Subtítulo -->
         <TextView
             android:id="@+id/subtitulo"
             android:layout_width="wrap_content"
@@ -57,7 +54,6 @@
             android:textColor="@android:color/darker_gray"
             android:textSize="16sp"/>
 
-        <!-- APLICA ESTOS CAMBIOS A TODOS TUS EditText -->
         <EditText
             android:id="@+id/etNombre"
             android:layout_width="match_parent"
@@ -113,8 +109,6 @@
             android:hint="Contraseña"
             android:inputType="textPassword"
             android:padding="16dp"/>
-
-        <!-- Resto del layout... -->
 
         <Button
             android:id="@+id/btnRegister"

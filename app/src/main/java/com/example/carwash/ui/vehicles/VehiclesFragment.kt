@@ -40,7 +40,7 @@ class VehiclesFragment : Fragment(R.layout.fragment_vehicles) {
         recyclerView = view.findViewById(R.id.rvVehicles)
 
         adapter = VehiclesAdapter(
-            mutableListOf(), // Empezamos vacío hasta que cargue Firebase
+            mutableListOf(), // empieza vacío hasta que cargue Firebase
             onEditClick = { vehicle, position -> showEditVehicleDialog(vehicle, position) },
             onDeleteClick = { position -> deleteVehicleFromFirebase(position) }
         )
@@ -56,7 +56,6 @@ class VehiclesFragment : Fragment(R.layout.fragment_vehicles) {
             }
         }
 
-        // Cargar vehículos desde Firebase al entrar
         loadVehiclesFromFirebase()
     }
 
@@ -71,7 +70,7 @@ class VehiclesFragment : Fragment(R.layout.fragment_vehicles) {
                     val v = Vehicle(
                         name = doc.getString("name") ?: "",
                         brand = doc.getString("brand") ?: "",
-                        plate = doc.id, // Usamos el ID del documento como patente
+                        plate = doc.id,
                         type = doc.getString("type") ?: ""
                     )
                     vehicleList.add(v)

@@ -7,7 +7,6 @@
     android:layout_height="match_parent"
     android:background="@color/white">
 
-    <!-- SECCIÓN DEL LOGO CENTRADO -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -23,7 +22,6 @@
 
     </LinearLayout>
 
-    <!-- Título -->
     <TextView
         android:id="@+id/registrarse"
         android:layout_width="wrap_content"
@@ -34,7 +32,6 @@
         android:textSize="24sp"
         android:textStyle="bold"/>
 
-    <!-- Subtítulo -->
     <TextView
         android:id="@+id/subtitulo"
         android:layout_width="wrap_content"
@@ -45,7 +42,6 @@
         android:textColor="@android:color/darker_gray"
         android:textSize="16sp"/>
 
-    <!-- ETIQUETA "PROGRAMADO" (ESTILO BOTÓN AZUL) -->
     <TextView
         android:id="@+id/tvProgramadoLabel"
         android:layout_width="match_parent"
@@ -61,7 +57,8 @@
     <LinearLayout
         android:id="@+id/emptyStateBookings"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"    android:gravity="center"
+        android:layout_height="match_parent"
+        android:gravity="center"
         android:orientation="vertical"
         android:visibility="visible">
 
@@ -89,7 +86,7 @@
             android:textColor="@android:color/darker_gray"/>
     </LinearLayout>
 
-    <!-- LISTA -->
+    <!-- lista de reservas -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/bookingsRecyclerView"
         android:layout_width="match_parent"

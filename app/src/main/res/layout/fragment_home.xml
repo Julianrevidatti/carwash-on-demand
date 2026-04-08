@@ -8,7 +8,6 @@
     android:orientation="vertical"
     tools:context=".ui.home.HomeFragment">
 
-    <!-- SECCIÓN DEL LOGO CENTRADO -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -32,14 +31,14 @@
             android:layout_marginStart="12dp"/>
     </LinearLayout>
 
-    <!-- Contenido Principal -->
+    <!-- linear de contenido principal -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="vertical">
 
-        <!-- Contenedor Superior -->
+        <!-- linear de contenido de arriba -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -62,10 +61,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="¿Qué lavado necesitás hoy?"
+                android:text="¿Dónde lavamos tu auto hoy?"
                 android:textSize="16sp" />
 
-            <!-- MAPA E INPUT DE DIRECCIÓN -->
+            <!-- mapa e input de direccion -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="250dp"
@@ -85,7 +84,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent" />
 
-                    <!-- Pin central fijo -->
+                    <!-- marcador del mapa -->
                     <ImageView
                         android:id="@+id/img_center_pin"
                         android:layout_width="40dp"
@@ -95,25 +94,24 @@
                         android:src="@android:drawable/ic_menu_mylocation"
                         app:tint="@color/azulcarwash" />
 
-                    <!-- Botón de selección rápida sobre el mapa -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnRequestWash"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="bottom|center_horizontal"
-                        android:layout_marginBottom="12dp"
-                        android:text="Solicitar lavado"
-                        android:textSize="12sp"
-                        android:backgroundTint="@color/azulcarwash"
-                        android:textColor="@android:color/white"
-                        app:cornerRadius="24dp"
-                        android:paddingStart="24dp"
-                        android:paddingEnd="24dp"
-                        app:icon="@android:drawable/ic_menu_add"
-                        app:iconSize="18dp"
-                        app:iconPadding="8dp" />
+<!--                    &lt;!&ndash; Botón de selección rápida sobre el mapa &ndash;&gt;-->
+<!--                    <com.google.android.material.button.MaterialButton-->
+<!--                        android:id="@+id/btnRequestWash"-->
+<!--                        android:layout_width="wrap_content"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:layout_gravity="bottom|center_horizontal"-->
+<!--                        android:layout_marginBottom="12dp"-->
+<!--                        android:text="Solicitar lavado"-->
+<!--                        android:textSize="12sp"-->
+<!--                        android:backgroundTint="@color/azulcarwash"-->
+<!--                        android:textColor="@android:color/white"-->
+<!--                        app:cornerRadius="24dp"-->
+<!--                        android:paddingStart="24dp"-->
+<!--                        android:paddingEnd="24dp"-->
+<!--                        app:icon="@android:drawable/ic_menu_add"-->
+<!--                        app:iconSize="18dp"-->
+<!--                        app:iconPadding="8dp" />-->
 
-                    <!-- Overlay para búsqueda rápida -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -147,6 +145,7 @@
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- comienzo de seccion de servicios -->
             <TextView
                 android:id="@+id/services_title"
                 android:layout_width="match_parent"
@@ -158,7 +157,7 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Contenedor con Scroll para las tarjetas -->
+        <!-- container para scrollear cards -->
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -174,7 +173,7 @@
                 android:paddingEnd="12dp"
                 android:useDefaultMargins="true">
 
-                <!-- Card de servicio: Base -->
+                <!-- card lavado base -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -231,7 +230,7 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Card de servicio: Premium -->
+                <!-- card lavado premium -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -288,7 +287,7 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Card de servicio: Express -->
+                <!-- card lavado express -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -345,7 +344,7 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Card de servicio: Detailing -->
+                <!-- card lavado detailing -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"

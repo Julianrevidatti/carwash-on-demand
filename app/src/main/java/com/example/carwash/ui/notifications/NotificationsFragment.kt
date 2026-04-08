@@ -63,10 +63,6 @@ class NotificationsFragment : Fragment() {
         if (status.uppercase() == "COMPLETED") {
             tvWashStatus.setTextColor(requireContext().getColor(android.R.color.holo_green_dark))
             tvWashStatus.setOnClickListener {
-                // Suponiendo que el ID del documento no está en el modelo FirebaseBooking, 
-                // pero en una implementación real deberíamos tenerlo.
-                // Por ahora, si no tenemos el ID, podríamos necesitar agregarlo al modelo.
-                // showRatingDialog(booking.id) 
             }
         } else {
             tvWashStatus.setTextColor(requireContext().getColor(android.R.color.holo_orange_dark))
