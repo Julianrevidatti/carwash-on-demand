@@ -60,6 +60,15 @@
             android:text="Direccion: Guareschi 45, Tigre"
             android:layout_marginTop="8dp"
             android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/tvVehicleInfo"
+            android:text="Vehículo: Ford Fiesta (AA123BB)"
+            android:textSize="13sp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 

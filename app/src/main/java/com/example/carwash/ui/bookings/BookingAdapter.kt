@@ -24,6 +24,7 @@ class BookingAdapter(
         val date: TextView = view.findViewById(R.id.date)
         val hour: TextView = view.findViewById(R.id.hour)
         val address: TextView = view.findViewById(R.id.address)
+        val tvVehicleInfo: TextView = view.findViewById(R.id.tvVehicleInfo)
         val payment: TextView = view.findViewById(R.id.payment)
         val status: TextView = view.findViewById(R.id.status)
         val cancelBtn: Button = view.findViewById(R.id.cancelBtn)
@@ -49,7 +50,8 @@ class BookingAdapter(
 
         holder.date.text = "Fecha: ${booking.date}"
         holder.hour.text = "Hora: ${booking.time}"
-        holder.address.text = "Vehículo: ${booking.vehicle}"
+        holder.address.text = "Lugar: ${booking.address}"
+        holder.tvVehicleInfo.text = "Vehículo: ${booking.vehicle}"
         holder.payment.text = "Pago: ${booking.paymentMethod}"
 
         if (booking.washerName != null) {

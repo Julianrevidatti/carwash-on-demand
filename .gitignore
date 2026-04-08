@@ -15,4 +15,4 @@
 local.properties
 
 # Secrets
-.env
+# .env (Habilitado por pedido del usuario)

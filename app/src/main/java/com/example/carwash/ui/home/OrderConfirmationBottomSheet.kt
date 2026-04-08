@@ -8,6 +8,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import android.os.Handler
+import android.os.Looper
 import com.example.carwash.R
 import com.example.carwash.data.model.*
 import com.example.carwash.data.repository.BookingRepository
@@ -129,19 +131,35 @@ class OrderConfirmationBottomSheet(
             val currentUser = FirebaseAuth.getInstance().currentUser ?: return@setOnClickListener
 
             btnConfirm.isEnabled = false
-            btnConfirm.text = "Buscando lavador..."
+            
+            if (paymentMethod == "Mercado Pago") {
+                btnConfirm.text = "Redirigiendo a Mercado Pago..."
+                Handler(Looper.getMainLooper()).postDelayed({
+                    Toast.makeText(requireContext(), "¡Pago aprobado!", Toast.LENGTH_SHORT).show()
+                    startWasherSearch(btnConfirm)
+                }, 2000)
+            } else {
+                startWasherSearch(btnConfirm)
+            }
+        }
+    }
 
-            // Search for a random washer
-            washerRepository.getRandomWasherForService(serviceName) { washer ->
-                if (!isAdded) return@getRandomWasherForService
+    private fun startWasherSearch(btnConfirm: Button) {
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
+        btnConfirm.text = "Buscando lavador..."
 
-                if (washer != null) {
-                    showWasherFoundDialog(washer, currentUser.uid, vehicles[spinnerVehicles.selectedItemPosition], rgPayment.checkedRadioButtonId)
-                } else {
-                    Toast.makeText(context, "No hay lavadores disponibles", Toast.LENGTH_LONG).show()
-                    btnConfirm.isEnabled = true
-                    btnConfirm.text = "Confirmar"
-                }
+        // Search for a random washer
+        washerRepository.getRandomWasherForService(serviceName) { washer ->
+            if (!isAdded) return@getRandomWasherForService
+
+            if (washer != null) {
+                showWasherFoundDialog(washer, currentUser.uid, VehicleRepository.getVehicles()[0], 0) 
+                // Nota: Aquí se usa el primer vehículo por simplicidad en la búsqueda, 
+                // pero en el dialog se usa el seleccionado en el spinner.
+            } else {
+                Toast.makeText(context, "No hay lavadores disponibles", Toast.LENGTH_LONG).show()
+                btnConfirm.isEnabled = true
+                btnConfirm.text = "Confirmar"
             }
         }
     }

@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -20,7 +22,7 @@ android {
         // Load GOOGLE_MAPS_KEY from .env
         val envFile = project.rootProject.file(".env")
         val googleMapsApiKey = if (envFile.exists()) {
-            val env = java.util.Properties()
+            val env = Properties()
             env.load(envFile.inputStream())
             env.getProperty("GOOGLE_MAPS_KEY") ?: ""
         } else {
@@ -69,4 +71,5 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.android.gms:play-services-location:21.1.0")
+    implementation("com.google.android.libraries.places:places:3.3.0")
 }
