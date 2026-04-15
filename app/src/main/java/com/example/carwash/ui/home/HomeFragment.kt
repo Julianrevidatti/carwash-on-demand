@@ -66,7 +66,8 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             val place = Autocomplete.getPlaceFromIntent(result.data!!)
             val latLng = place.latLng
             if (latLng != null) {
-                googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+                isCameraMovedBySearch = true
+                googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
                 binding.searchBar.setText(place.address ?: place.name)
             }
         }
@@ -137,28 +138,64 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
+    private var isCameraMovedBySearch = false
+
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
         val initialLatLng = LatLng(-34.6037, -58.3816) // Buenos Aires
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(initialLatLng, 15f))
         
+        map.setOnCameraMoveStartedListener { reason ->
+            if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
+                isCameraMovedBySearch = false
+            }
+        }
+
         map.setOnCameraIdleListener {
-            val center = map.cameraPosition.target
-            updateAddressFromLocation(center)
+            if (isCameraMovedBySearch) {
+                isCameraMovedBySearch = false
+            } else {
+                val center = map.cameraPosition.target
+                updateAddressFromLocation(center)
+            }
         }
     }
 
     private fun updateAddressFromLocation(latLng: LatLng) {
-        try {
-            val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
-            if (!addresses.isNullOrEmpty()) {
-                val address = addresses[0].getAddressLine(0)
-                binding.searchBar.setText(address)
-            } else {
-                binding.searchBar.setText("${"%.5f".format(latLng.latitude)}, ${"%.5f".format(latLng.longitude)}")
-            }
-        } catch (e: Exception) {
-            binding.searchBar.setText("${"%.5f".format(latLng.latitude)}, ${"%.5f".format(latLng.longitude)}")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1, object : Geocoder.GeocodeListener {
+                override fun onGeocode(addresses: List<android.location.Address>) {
+                    activity?.runOnUiThread {
+                        if (addresses.isNotEmpty()) {
+                            binding.searchBar.setText(addresses[0].getAddressLine(0))
+                        } else {
+                            binding.searchBar.setText("${"%.5f".format(latLng.latitude)}, ${"%.5f".format(latLng.longitude)}")
+                        }
+                    }
+                }
+                override fun onError(errorMessage: String?) {
+                    activity?.runOnUiThread {
+                        binding.searchBar.setText("${"%.5f".format(latLng.latitude)}, ${"%.5f".format(latLng.longitude)}")
+                    }
+                }
+            })
+        } else {
+            Thread {
+                try {
+                    val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
+                    activity?.runOnUiThread {
+                        if (!addresses.isNullOrEmpty()) {
+                            binding.searchBar.setText(addresses[0].getAddressLine(0))
+                        } else {
+                            binding.searchBar.setText("${"%.5f".format(latLng.latitude)}, ${"%.5f".format(latLng.longitude)}")
+                        }
+                    }
+                } catch (e: Exception) {
+                    activity?.runOnUiThread {
+                        binding.searchBar.setText("${"%.5f".format(latLng.latitude)}, ${"%.5f".format(latLng.longitude)}")
+                    }
+                }
+            }.start()
         }
     }
 
