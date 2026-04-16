@@ -138,7 +138,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
-        <!-- cancelar -->
+        <!-- botones -->
         <LinearLayout
             android:orientation="horizontal"
             android:layout_marginTop="13dp"
@@ -148,13 +148,15 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/cancelBtn"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:text="Cancelar"
                 android:textAllCaps="false"
                 android:textColor="@color/red"
                 app:cornerRadius="24dp"
                 app:strokeColor="@color/red" />
+
         </LinearLayout>
 
     </LinearLayout>

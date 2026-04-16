@@ -92,7 +92,9 @@ data class FirebaseBooking(
     val meetingAddress: String = "",
     val finalAmount: Double = 0.0,
     val status: String = "PENDING",
+    val hasReview: Boolean = false,
     val createdAt: Timestamp = Timestamp.now()
+
 )
 
 data class Payment(

@@ -20,9 +20,12 @@ class BookingFragment : Fragment(R.layout.fragment_bookings) {
         val emptyState = view.findViewById<View>(R.id.emptyStateBookings)
 
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        adapter = BookingAdapter { booking -> 
-            viewModel.cancelBooking(booking.id) 
-        }
+        adapter = BookingAdapter(
+            onCancelClick = { booking -> viewModel.cancelBooking(booking.id) },
+            onReviewSubmit = { bookingId, washerId, score, comment ->
+                viewModel.submitReview(bookingId, washerId, score, comment)
+            }
+        )
         recyclerView.adapter = adapter
 
         // Observamos los cambios en la lista de reservas

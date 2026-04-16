@@ -39,8 +39,8 @@ class NotificationsViewModel : ViewModel() {
                     // ordenado por fecha de creacion
                     val latest = snapshot.toObjects(FirebaseBooking::class.java)
                         .sortedByDescending { it.createdAt }
-                        .firstOrNull()
-                    
+                        .firstOrNull { it.status != "CANCELLED" } // ignorar cancelados
+
                     _latestBooking.value = latest
                 } else {
                     _latestBooking.value = null
@@ -48,10 +48,33 @@ class NotificationsViewModel : ViewModel() {
             }
     }
 
-    fun saveRating(bookingId: String, rating: Float, onResult: (Boolean) -> Unit) {
-        db.collection("bookings")
-            .document(bookingId)
-            .update("rating", rating)
+    fun saveRating(bookingId: String, washerId: String, score: Int, comment: String, onResult: (Boolean) -> Unit) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        val review = mapOf(
+            "userId" to uid,
+            "washerId" to washerId,
+            "score" to score,
+            "comment" to comment,
+            "createdAt" to com.google.firebase.Timestamp.now()
+        )
+
+        val batch = db.batch()
+
+        // Guardar reseña
+        val reviewRef = db.collection("reviews").document()
+        batch.set(reviewRef, review)
+
+        // Marcar booking como reseñado
+        val bookingRef = db.collection("bookings").document(bookingId)
+        batch.update(bookingRef, "hasReview", true)
+
+        // Actualizar rating del lavador
+        val washerRef = db.collection("washers").document(washerId)
+        batch.update(washerRef, "totalReviews", com.google.firebase.firestore.FieldValue.increment(1))
+        batch.update(washerRef, "totalScore", com.google.firebase.firestore.FieldValue.increment(score.toLong()))
+
+        batch.commit()
             .addOnSuccessListener { onResult(true) }
             .addOnFailureListener { onResult(false) }
     }

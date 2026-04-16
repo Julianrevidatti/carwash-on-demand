@@ -1,19 +1,27 @@
 package com.example.carwash.ui.bookings
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.RatingBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.example.carwash.R
 import com.example.carwash.data.model.Booking
 import com.example.carwash.data.model.BookingStatus
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.button.MaterialButton
+import android.widget.EditText  // ← agregar este import
 
+// Cambiar la firma del adapter
 class BookingAdapter(
-    private val onCancelClick: (Booking) -> Unit
+    private val onCancelClick: (Booking) -> Unit,
+    private val onReviewSubmit: (bookingId: String, washerId: String, score: Int, comment: String) -> Unit
 ) : RecyclerView.Adapter<BookingAdapter.BookingViewHolder>() {
 
     private var bookings: List<Booking> = emptyList()
@@ -71,31 +79,26 @@ class BookingAdapter(
         }
         holder.serviceImage.setImageResource(imageRes)
 
+        // LÓGICA DE ESTADOS Y BOTONES
         when (booking.status) {
             BookingStatus.PENDING -> {
                 holder.status.text = "Estado: Programado"
                 holder.status.setTextColor(android.graphics.Color.parseColor("#2D5BFF"))
                 holder.cancelBtn.visibility = View.VISIBLE
             }
-            BookingStatus.IN_PROGRESS -> {
-                holder.status.text = "Estado: En Proceso"
-                holder.status.setTextColor(android.graphics.Color.parseColor("#F4B400")) // AMARILLO
-                holder.cancelBtn.visibility = View.GONE
-            }
             BookingStatus.COMPLETED -> {
                 holder.status.text = "Estado: Finalizado"
                 holder.status.setTextColor(android.graphics.Color.parseColor("#34C759"))
                 holder.cancelBtn.visibility = View.GONE
             }
-            BookingStatus.CANCELED -> {
-                holder.status.text = "Estado: Cancelado"
-                holder.status.setTextColor(android.graphics.Color.parseColor("#FF3B30"))
+            else -> {
                 holder.cancelBtn.visibility = View.GONE
             }
         }
 
         holder.cancelBtn.setOnClickListener { onCancelClick(booking) }
     }
+
 
     fun updateList(newList: List<Booking>) {
         bookings = newList

@@ -11,11 +11,13 @@ import androidx.fragment.app.viewModels
 import com.example.carwash.R
 import com.example.carwash.data.model.FirebaseBooking
 import java.text.SimpleDateFormat
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import java.util.*
 
 class NotificationsFragment : Fragment() {
 
     private val viewModel: NotificationsViewModel by viewModels()
+    private var ratingDialogShown = false
     
     private lateinit var tvWashStatus: TextView
     private lateinit var tvWashDetails: TextView
@@ -52,21 +54,33 @@ class NotificationsFragment : Fragment() {
     }
 
     private fun updateUI(booking: FirebaseBooking) {
-        val status = booking.status
-        val service = booking.serviceSnapshot.name
-        val date = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-            .format(booking.scheduledDate.toDate())
+        val currentTime = System.currentTimeMillis()
+        val startTime = booking.scheduledDate.toDate().time
+        val endTime = startTime + (booking.estimatedDurationMinutes * 60 * 1000L)
 
-        tvWashStatus.text = "Estado: $status"
-        tvWashDetails.text = "$service programado para $date"
+        val realStatus = when {
+            booking.status == "CANCELLED" -> "CANCELLED"
+            booking.status == "COMPLETED" -> "COMPLETED"
+            currentTime < startTime -> "PENDING"
+            currentTime in startTime until endTime -> "IN_PROGRESS"
+            else -> "COMPLETED"
+        }
 
-        if (status.uppercase() == "COMPLETED") {
-            tvWashStatus.setTextColor(requireContext().getColor(android.R.color.holo_green_dark))
-            tvWashStatus.setOnClickListener {
-            }
-        } else {
-            tvWashStatus.setTextColor(requireContext().getColor(android.R.color.holo_orange_dark))
-            tvWashStatus.setOnClickListener(null)
+        tvWashStatus.text = when (realStatus) {
+            "PENDING" -> "⏳ Programado"
+            "IN_PROGRESS" -> "🚿 En progreso"
+            "COMPLETED" -> "✅ Finalizado"
+            else -> realStatus
+        }
+
+        tvWashDetails.text = "${booking.serviceSnapshot.name} programado para " +
+                SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                    .format(booking.scheduledDate.toDate())
+
+        // Mostrar dialog de reseña solo si completado y sin reseña previa
+        if (realStatus == "COMPLETED" && !booking.hasReview && !ratingDialogShown) {
+            ratingDialogShown = true
+            showRatingDialog(booking.id, booking.washerId)
         }
     }
 
@@ -76,23 +90,34 @@ class NotificationsFragment : Fragment() {
         tvWashStatus.setTextColor(requireContext().getColor(android.R.color.black))
     }
 
-    private fun showRatingDialog(bookingId: String) {
+    private fun showRatingDialog(bookingId: String, washerId: String) {
+        val dialog = BottomSheetDialog(requireContext())
         val dialogView = layoutInflater.inflate(R.layout.dialog_rating, null)
-        val ratingBar = dialogView.findViewById<android.widget.RatingBar>(R.id.ratingBar)
 
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("Calificar servicio")
-            .setView(dialogView)
-            .setPositiveButton("Enviar") { _, _ ->
-                viewModel.saveRating(bookingId, ratingBar.rating) { success ->
-                    if (success) {
-                        tvWashDetails.text = "Gracias por calificar ⭐ ${ratingBar.rating}"
-                    } else {
-                        Toast.makeText(requireContext(), "Error al calificar", Toast.LENGTH_SHORT).show()
-                    }
-                }
+        val ratingBar = dialogView.findViewById<android.widget.RatingBar>(R.id.ratingBar)
+        val etComment = dialogView.findViewById<android.widget.EditText>(R.id.etComment)
+        val btnSubmit = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSubmitRating)
+
+        btnSubmit.setOnClickListener {
+            val stars = ratingBar.rating.toInt()
+            if (stars == 0) {
+                Toast.makeText(requireContext(), "Seleccioná una calificación", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
-            .setNegativeButton("Cancelar", null)
-            .show()
+            btnSubmit.isEnabled = false
+            btnSubmit.text = "Enviando..."
+
+            viewModel.saveRating(bookingId, washerId, stars, etComment.text.toString().trim()) { success ->
+                if (success) {
+                    tvWashDetails.text = "¡Gracias por tu reseña de $stars estrellas! ⭐"
+                } else {
+                    Toast.makeText(requireContext(), "Error al guardar la reseña", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }
+        }
+
+        dialog.setContentView(dialogView)
+        dialog.show()
     }
 }
