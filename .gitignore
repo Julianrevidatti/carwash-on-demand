@@ -16,3 +16,8 @@ local.properties
 
 # Secrets
 # .env (Habilitado por pedido del usuario)
+
+# Rastros de IA y Agentes Autónomos
+/scripts/
+/directivas/
+/.tmp/
