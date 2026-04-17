@@ -16,7 +16,17 @@
         android:textSize="20sp"
         android:textStyle="bold"
         android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="24dp"/>
+        android:layout_marginBottom="16dp"/>
+        
+    <TextView
+        android:id="@+id/tvSelectedLocation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Ubicación"
+        android:textColor="@android:color/darker_gray"
+        android:textSize="14sp"
+        android:layout_marginBottom="16dp"
+        android:drawablePadding="8dp" />
 
     <TextView
         android:layout_width="wrap_content"

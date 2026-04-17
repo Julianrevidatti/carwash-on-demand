@@ -93,7 +93,24 @@
                         android:layout_marginBottom="20dp"
                         android:src="@android:drawable/ic_menu_mylocation"
                         app:tint="@color/azulcarwash" />
-
+                    
+                    <!-- Botón para confirmar la ubicacion que aparece del geocoder -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnConfirmLocation"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|center_horizontal"
+                        android:layout_marginBottom="12dp"
+                        android:text="Confirmar Ubicación"
+                        android:textSize="12sp"
+                        android:backgroundTint="@color/azulcarwash"
+                        android:textColor="@android:color/white"
+                        app:cornerRadius="24dp"
+                        android:paddingStart="24dp"
+                        android:paddingEnd="24dp"
+                        app:icon="@android:drawable/ic_menu_mylocation"
+                        app:iconSize="18dp"
+                        app:iconPadding="8dp" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -106,6 +123,7 @@
                         android:gravity="center_vertical">
 
                         <ImageView
+                            android:id="@+id/btn_search_location"
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@android:drawable/ic_menu_search"
@@ -121,9 +139,10 @@
                             android:inputType="textPostalAddress"
                             android:padding="12dp"
                             android:textSize="14sp"
-                            android:focusable="false"
+                            android:focusable="true"
                             android:clickable="true"
-                            android:cursorVisible="false" />
+                            android:focusableInTouchMode="true"
+                            android:cursorVisible="true" />
                     </LinearLayout>
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>

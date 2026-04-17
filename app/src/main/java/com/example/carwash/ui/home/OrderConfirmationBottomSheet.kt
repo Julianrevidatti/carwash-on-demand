@@ -52,6 +52,7 @@ class OrderConfirmationBottomSheet(
         super.onViewCreated(view, savedInstanceState)
 
         val tvTitle = view.findViewById<TextView>(R.id.tvConfirmTitle)
+        val tvSelectedLocation = view.findViewById<TextView>(R.id.tvSelectedLocation)
         val spinnerVehicles = view.findViewById<Spinner>(R.id.spinnerVehicles)
         val tvPrice = view.findViewById<TextView>(R.id.tvPrice)
         val rgPayment = view.findViewById<RadioGroup>(R.id.rgPayment)
@@ -63,6 +64,7 @@ class OrderConfirmationBottomSheet(
         val btnConfirm = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnConfirmOrder)
 
         tvTitle.text = "Confirmar $serviceName"
+        tvSelectedLocation.text = "Ubicación: " + if(initialLocation.isNotEmpty()) initialLocation else "Local Actual"
 
         val vehicles = VehicleRepository.getVehicles()
         val vehicleLabels = vehicles.map { "${it.name} - ${it.plate}" }
@@ -134,10 +136,80 @@ class OrderConfirmationBottomSheet(
             
             if (paymentMethod == "Mercado Pago") {
                 btnConfirm.text = "Redirigiendo a Mercado Pago..."
-                Handler(Looper.getMainLooper()).postDelayed({
-                    Toast.makeText(requireContext(), "¡Pago aprobado!", Toast.LENGTH_SHORT).show()
-                    startWasherSearch(btnConfirm)
-                }, 2000)
+                Thread {
+                    try {
+                        val url = java.net.URL("https://api.mercadopago.com/checkout/preferences")
+                        val conn = url.openConnection() as java.net.HttpURLConnection
+                        conn.requestMethod = "POST"
+                        val token = "APP_USR-6320671833558760-041618-682bfe517fac1043a2196c8bb4fb911c-3023878944"
+                        conn.setRequestProperty("Authorization", "Bearer $token")
+                        conn.setRequestProperty("Content-Type", "application/json")
+                        conn.doOutput = true
+                        
+                        val externalRef = java.util.UUID.randomUUID().toString()
+                        val jsonInputString = "{\"items\":[{\"title\":\"$serviceName\",\"quantity\":1,\"unit_price\":${currentPrice.toInt()}}],\"external_reference\":\"$externalRef\"}"
+                        
+                        conn.outputStream.use { os ->
+                            val input = jsonInputString.toByteArray(Charsets.UTF_8)
+                            os.write(input, 0, input.size)
+                        }
+                        
+                        val responseCode = conn.responseCode
+                        if (responseCode == java.net.HttpURLConnection.HTTP_CREATED || responseCode == java.net.HttpURLConnection.HTTP_OK) {
+                            val response = conn.inputStream.bufferedReader().use { it.readText() }
+                            val initPoint = org.json.JSONObject(response).getString("init_point")
+                            
+                            Handler(Looper.getMainLooper()).post {
+                                val uri = android.net.Uri.parse(initPoint)
+                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, uri)
+                                try {
+                                    startActivity(intent)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                                
+                                // Polling para validar el pago
+                                var tries = 0
+                                Thread {
+                                    while(tries < 60) {
+                                        try {
+                                            val checkUrl = java.net.URL("https://api.mercadopago.com/v1/payments/search?external_reference=$externalRef&status=approved")
+                                            val checkConn = checkUrl.openConnection() as java.net.HttpURLConnection
+                                            checkConn.requestMethod = "GET"
+                                            checkConn.setRequestProperty("Authorization", "Bearer $token")
+                                            if (checkConn.responseCode == 200) {
+                                                val checkResponse = checkConn.inputStream.bufferedReader().use { it.readText() }
+                                                val results = org.json.JSONObject(checkResponse).getJSONArray("results")
+                                                if (results.length() > 0) {
+                                                    Handler(Looper.getMainLooper()).post {
+                                                        Toast.makeText(requireContext(), "¡Pago liquidado y validado con éxito!", Toast.LENGTH_SHORT).show()
+                                                        startWasherSearch(btnConfirm)
+                                                    }
+                                                    break
+                                                }
+                                            }
+                                        } catch(e: Exception) {}
+                                        tries++
+                                        Thread.sleep(3000)
+                                    }
+                                }.start()
+                            }
+                        } else {
+                            Handler(Looper.getMainLooper()).post {
+                                Toast.makeText(requireContext(), "Error al crear la preferencia de pago", Toast.LENGTH_SHORT).show()
+                                btnConfirm.text = "Confirmar"
+                                btnConfirm.isEnabled = true
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        Handler(Looper.getMainLooper()).post {
+                            Toast.makeText(requireContext(), "Error de red con Mercado Pago", Toast.LENGTH_SHORT).show()
+                            btnConfirm.text = "Confirmar"
+                            btnConfirm.isEnabled = true
+                        }
+                    }
+                }.start()
             } else {
                 startWasherSearch(btnConfirm)
             }
@@ -171,7 +243,8 @@ class OrderConfirmationBottomSheet(
             .setTitle("¡Lavador Encontrado!")
             .setMessage("${washer.name} ${washer.lastName} aceptó tu pedido.\n" +
                        "Rating: ⭐ ${washer.averageRating}\n" +
-                       "Tiempo estimado de lavado: $estimatedMinutes minutos\n\n" +
+                       "Tiempo estimado de lavado: $estimatedMinutes minutos\n" +
+                       "Ubicación del lavado: ${if(initialLocation.isNotEmpty()) initialLocation else "Tu dirección"}\n\n" +
                        "¿Deseas confirmar la reserva?")
             .setPositiveButton("Confirmar") { _, _ ->
                 proceedWithBooking(washer, userId, vehicle, paymentId, estimatedMinutes)

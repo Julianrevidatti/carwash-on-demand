@@ -130,15 +130,44 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         binding.btnOrderExpress.setOnClickListener { startLocationChoiceFlow("Express") }
         binding.btnOrderDetailing.setOnClickListener { startLocationChoiceFlow("Detailing") }
 
-        binding.searchBar.setOnClickListener {
-            val fields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS)
-            val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY, fields)
-                .build(requireContext())
-            autocompleteLauncher.launch(intent)
+        binding.btnConfirmLocation.setOnClickListener {
+            val loc = binding.searchBar.text.toString()
+            if(loc.isNotEmpty()) {
+               confirmedLocation = loc
+               Toast.makeText(requireContext(), "Ubicación confirmada", Toast.LENGTH_SHORT).show()
+            } else {
+               Toast.makeText(requireContext(), "Ingresa una ubicación válida", Toast.LENGTH_SHORT).show()
+            }
+        }
+        
+        binding.btnSearchLocation.setOnClickListener {
+            val locationName = binding.searchBar.text.toString()
+            if (locationName.isNotEmpty()) {
+                Thread {
+                    try {
+                        val addresses = geocoder.getFromLocationName(locationName, 1)
+                        if (!addresses.isNullOrEmpty()) {
+                            val location = addresses[0]
+                            val latLng = LatLng(location.latitude, location.longitude)
+                            activity?.runOnUiThread {
+                                isCameraMovedBySearch = true
+                                googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+                            }
+                        } else {
+                            activity?.runOnUiThread {
+                                Toast.makeText(requireContext(), "Dirección no encontrada", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }.start()
+            }
         }
     }
 
     private var isCameraMovedBySearch = false
+    private var confirmedLocation: String = ""
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
@@ -246,41 +275,11 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun startLocationChoiceFlow(serviceName: String, useMapOnly: Boolean = false) {
-        if (useMapOnly) {
-            startBookingFlow(serviceName, binding.searchBar.text.toString())
+        if (confirmedLocation.isEmpty()) {
+            Toast.makeText(requireContext(), "Primero confirmá la ubicación tocando el botón 'Confirmar Ubicación' en el mapa.", Toast.LENGTH_LONG).show()
             return
         }
-
-        val uid = FirebaseAuth.getInstance().currentUser?.uid
-        if (uid != null) {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(uid)
-                .get()
-                .addOnSuccessListener { doc ->
-                    val baseAddress = doc.getString("baseAddress") ?: ""
-                    
-                    if (baseAddress.isNotEmpty()) {
-                        MaterialAlertDialogBuilder(requireContext())
-                            .setTitle("¿Dónde realizaremos el lavado?")
-                            .setMessage("Elegí si usamos tu dirección registrada o el punto marcado en el mapa.")
-                            .setPositiveButton("Mi Dirección") { _, _ ->
-                                startBookingFlow(serviceName, baseAddress)
-                            }
-                            .setNegativeButton("Punto en Mapa") { _, _ ->
-                                startBookingFlow(serviceName, binding.searchBar.text.toString())
-                            }
-                            .show()
-                    } else {
-                        startBookingFlow(serviceName, binding.searchBar.text.toString())
-                    }
-                }
-                .addOnFailureListener {
-                    startBookingFlow(serviceName, binding.searchBar.text.toString())
-                }
-        } else {
-            startBookingFlow(serviceName, binding.searchBar.text.toString())
-        }
+        startBookingFlow(serviceName, confirmedLocation)
     }
 
     private fun startBookingFlow(serviceName: String, location: String) {
